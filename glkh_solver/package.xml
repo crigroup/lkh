@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>glkh_solver</name>
+  <version>0.1.0</version>
+  <description>
+    ROS package for solving the Generalized Traveling Salesman Problem using
+    the Lin–Kernighan heuristic.
+  </description>
+
+  <author email="fsuarez6@gmail.com">Francisco Suarez-Ruiz</author>
+  <maintainer email="fsuarez6@gmail.com">Francisco Suarez-Ruiz</maintainer>
+  <license>BSD 3-Clause</license>
+  <url type="repository">https://github.com/crigroup/lkh</url>
+  <url type="bugtracker">https://github.com/crigroup/lkh/issues</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+
+</package>
