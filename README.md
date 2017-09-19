@@ -12,6 +12,6 @@ http://webhotel4.ruc.dk/~keld/research/GLKH/
 * Throughout the various files in this repository.
 
 ## License
-This packages are distributed under BSD 3-clause license but the LKH and GLKH
+These packages are distributed under BSD 3-clause license but the LKH and GLKH
 software state the following:
 > The developed software is free of charge for academic and non-commercial use
