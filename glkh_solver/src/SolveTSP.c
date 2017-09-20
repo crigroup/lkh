@@ -8,7 +8,7 @@
  *   Dimension:    The number of nodes in the instance.
  *   ParFileName:  Name of the paramter file.
  *   TourFileName: Name of a temporary tour file.
- *   Tour:         The solution tour. 
+ *   Tour:         The solution tour.
  *   Optimum:      A known optimum.
  *   Deduction:    Value to be subtracted from the tour cost found by LKH.
  *
@@ -25,7 +25,7 @@ GainType SolveTSP(int Dimension, char *ParFileName,
     char Command[256], Key[256], Buffer[256], *Line, *Keyword;
     char Delimiters[] = " :=\n\t\r\f\v\xef\xbb\xbf";
 
-    sprintf(Command, "./LKH %s", ParFileName);
+    sprintf(Command, "rosrun lkh_solver lkh_solver %s", ParFileName);
     assert(p = popen(Command, "r"));
     Cost = PLUS_INFINITY;
     while (fgets(Buffer, sizeof(Buffer), p)) {
@@ -39,7 +39,7 @@ GainType SolveTSP(int Dimension, char *ParFileName,
                 char *cp = strchr(Buffer + strlen(Key), '=');
                 sscanf(cp + 1, GainInputFormat, &Cost);
                 Cost -= Deduction;
-            } else if (TraceLevel > 0 && Dimension != GTSPSets) { 
+            } else if (TraceLevel > 0 && Dimension != GTSPSets) {
                 if (!strcmp(Key, "Run")) {
                     char *cp = Buffer + strlen(Key);
                     sscanf(cp + 1, "%d", &Run);
