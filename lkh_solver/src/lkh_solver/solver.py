@@ -129,14 +129,18 @@ def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver'):
   if not params.initialized():
     raise ValueError('SolverParameters have not been initialized')
   # Create a TMP folder required for the GTSP solver
-  working_path = os.path.dirname(problem_file)
+  def create_dir(dpath):
+    if not os.path.isdir(dpath):
+      try:
+        os.mkdir(dpath)
+      except OSError:
+        raise OSError('Failed to create: {}'.format(dpath))
+  working_path = os.path.expanduser('~/.ros/lkh')
   tmp_path = os.path.join(working_path, 'TMP')
-  try:
-    os.mkdir(tmp_path)
-  except OSError:
-    raise OSError('Failed to create: {}'.format(tmp_path))
+  create_dir(working_path)
+  create_dir(tmp_path)
   # Generate the parameters file
-  basename = parser.write_parameters_file(problem_file, params)
+  basename = parser.write_parameters_file(problem_file, params, working_path)
   # Call the LKH solver
   if params.trace_level > 0:
     outpipe = None

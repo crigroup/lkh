@@ -7,8 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS
-    include
   CATKIN_DEPENDS
     lkh_solver
     roscpp
@@ -45,6 +43,10 @@ target_link_libraries(glkh_exp_solver -lm)
 add_executable(glkh_check_solver src/GLKH_CHECKmain.c ${COMMON_SRC_FILES})
 target_link_libraries(glkh_check_solver -lm)
 
+# Tests
+catkin_add_nosetests(tests/test_modules.py)
+
+# Install nodes
 install(
   TARGETS
     glkh_solver
@@ -52,3 +54,8 @@ install(
     glkh_check_solver
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+# Install instances
+install(
+  DIRECTORY gtsplib
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

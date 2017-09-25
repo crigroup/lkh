@@ -24,8 +24,14 @@ target_link_libraries(${PROJECT_NAME} -lm)
 # Tests
 catkin_add_nosetests(tests/test_modules.py)
 
+# Install nodes
 install(
   TARGETS
     ${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+# Install instances
+install(
+  DIRECTORY tsplib
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

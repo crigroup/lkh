@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>lkh</name>
+  <version>0.1.0</version>
+  <description>
+    ROS packages for solving the TSP and GTSP problems using LKH heuristic
+  </description>
+
+  <author email="fsuarez6@gmail.com">Francisco Suarez-Ruiz</author>
+  <maintainer email="fsuarez6@gmail.com">Francisco Suarez-Ruiz</maintainer>
+  <license>BSD 3-Clause</license>
+  <url type="repository">https://github.com/crigroup/lkh</url>
+  <url type="bugtracker">https://github.com/crigroup/lkh/issues</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>lkh_solver</exec_depend>
+  <exec_depend>glkh_solver</exec_depend>
+
+  <export>
+   <metapackage />
+ </export>
+
+</package>
