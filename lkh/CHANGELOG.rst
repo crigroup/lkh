@@ -2,8 +2,8 @@
 Changelog for package lkh
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2017-09-25)
+------------------
 * Fix installation bugs
 * Contributors: fsuarez6
 
