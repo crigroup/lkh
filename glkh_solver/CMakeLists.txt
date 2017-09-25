@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(glkh_solver)
 
 find_package(catkin REQUIRED COMPONENTS
+  lkh_solver
   roscpp
 )
 
@@ -9,6 +10,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
+    lkh_solver
     roscpp
 )
 include_directories(include)

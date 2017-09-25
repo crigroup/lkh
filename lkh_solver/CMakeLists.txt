@@ -5,6 +5,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
+catkin_python_setup()
+
 catkin_package(
   CATKIN_DEPENDS
     roscpp
@@ -18,6 +20,9 @@ file(GLOB LKH_SRC
 )
 add_executable(${PROJECT_NAME} ${LKH_SRC})
 target_link_libraries(${PROJECT_NAME} -lm)
+
+# Tests
+catkin_add_nosetests(tests/test_modules.py)
 
 install(
   TARGETS
