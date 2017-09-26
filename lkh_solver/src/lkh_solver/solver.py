@@ -132,7 +132,7 @@ def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver'):
   def create_dir(dpath):
     if not os.path.isdir(dpath):
       try:
-        os.mkdir(dpath)
+        os.makedirs(dpath)
       except OSError:
         raise OSError('Failed to create: {}'.format(dpath))
   working_path = os.path.expanduser('~/.ros/lkh')
