@@ -97,7 +97,8 @@ class SolverParameters(object):
         break
     return initialized
 
-def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver'):
+def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver',
+                                                      working_path='/tmp/lkh'):
   """
   Run the `lkh_solver` on the given `problem_file`. The `lkh_solver` node will
   generate several files (`.par`, `.pi`, `.tour`, etc) that can be used for
@@ -115,6 +116,8 @@ def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver'):
     ROS package where the solver is available
   rosnode: str
     ROS node of the solver
+  working_path: str
+    Path to be used by the LKH solver to store the required intermediate files
 
   Returns
   -------
@@ -135,7 +138,6 @@ def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver'):
         os.makedirs(dpath)
       except OSError:
         raise OSError('Failed to create: {}'.format(dpath))
-  working_path = os.path.expanduser('~/.ros/lkh')
   tmp_path = os.path.join(working_path, 'TMP')
   create_dir(working_path)
   create_dir(tmp_path)
