@@ -44,4 +44,8 @@ script:
   - cd ~/catkin_ws
   - catkin_make
   - source devel/setup.bash
-  - catkin_make test
+  # - catkin_make test
+  - roscd lkh_solver/tests
+  - nosetests -v -s
+  - roscd glkh_solver/tests
+  - nosetests -v -s
