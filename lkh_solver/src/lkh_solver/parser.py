@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 import os
+import numpy as np
+import networkx as nx
+
 
 def get_keyword_index(lines, keyword):
   """
@@ -82,7 +85,7 @@ def write_parameters_file(problem_file, params, working_path):
   Parameters
   ----------
   problem_file: str
-    Path to the problem file (`.tsp` file)
+    Path to the problem file (`.tsp` or `.atsp` file)
   params: SolverParameters
     Parameters to be pased to the LKH solver. See :class:`SolverParameters` for
     details.
@@ -118,4 +121,61 @@ def write_parameters_file(problem_file, params, working_path):
   # Write the file
   with open(basename+'.par', 'w') as f:
     f.write(content)
+  return basename
+
+def write_tsplib(filename, graph, params):
+  """
+  Write the problem file used by the `lkh_solver` to solve a TSP/ATSP
+  instance.
+
+  Parameters
+  ----------
+  filename: str
+    Path where the file will be written. Use `.tsp` for symmetric TSP problems
+    and `.atsp` for asymmetric TSP problems.
+  graph: NetworkX graph
+    The input graph. For symmetric TSP it must be of type `nx.Graph`, for the
+    asymmetric it must be of type `nx.DiGraph`
+  params: SolverParameters
+    Parameters to be pased to the LKH solver. See :class:`SolverParameters` for
+    details.
+
+  Returns
+  -------
+  basename: str
+    The basename is equal to the `filename` without the file extension
+  """
+  problem_name, extension = os.path.splitext(os.path.basename(filename))
+  if extension.lower() == '.tsp':
+    problem_type = 'TSP'
+    if graph.is_directed():
+      raise ValueError('Mismatch between file extension and graph type')
+  elif extension.lower() == '.atsp':
+    problem_type = 'ATSP'
+    if not graph.is_directed():
+      raise ValueError('Mismatch between file extension and graph type')
+  else:
+    raise ValueError('File extension is not supported'.format(extension))
+  num_nodes = graph.number_of_nodes()
+  ## TSP/ATSP File
+  header =  'NAME: {}\n'.format(problem_name)
+  header += 'TYPE: {}\n'.format(problem_type)
+  header += 'COMMENT: Task with {} targets\n'.format(num_nodes)
+  header += 'DIMENSION: {}\n'.format(num_nodes)
+  header += 'EDGE_WEIGHT_TYPE: EXPLICIT\n'
+  header += 'EDGE_WEIGHT_FORMAT: FULL_MATRIX \n'
+  header += 'EDGE_WEIGHT_SECTION\n'
+  # Prepare the edge weight section
+  nodelist = graph.nodes()
+  matrix = np.asarray(nx.to_numpy_matrix(graph, nodelist, weight='weight'))
+  matrix = np.int0(matrix * (10**params.sigfigs))
+  matrix_str = '\n'.join(' '.join(str(i) for i in row) for row in matrix)
+  # Write the file
+  with open(filename, 'w') as f:
+    f.write(header)
+    f.write(matrix_str)
+    f.write('\nEOF')
+  # Return the full base name of the file
+  path = os.path.dirname(filename)
+  basename = os.path.join(path, problem_name)
   return basename

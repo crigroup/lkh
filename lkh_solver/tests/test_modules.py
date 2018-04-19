@@ -14,11 +14,12 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     files = []
     for name in os.listdir(path):
       fullpath = os.path.join(path, name)
-      if os.path.isfile(fullpath) and fullpath.endswith('.tsp'):
+      valid_ext = fullpath.endswith('.tsp') or fullpath.endswith('.atsp')
+      if os.path.isfile(fullpath) and valid_ext:
         files.append(fullpath)
     # Solve them
     params = lkh.solver.SolverParameters()
-    params.trace_level = 0
+    params.trace_level = 1
     for problem_file in files:
       tour, info = lkh.solver.lkh_solver(problem_file, params)
 

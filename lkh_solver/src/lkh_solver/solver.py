@@ -2,6 +2,7 @@
 import os
 import math
 import time
+import shutil
 from subprocess import Popen, PIPE
 # Own modules
 from . import parser
@@ -51,6 +52,9 @@ class SolverParameters(object):
   precision = 10
   """The internal precision in the representation of transformed distances (10
   corresponds to 2 decimal places)"""
+  sigfigs = 3
+  """Number of significative figures (decimal places) to be used in the
+  conversion of distances from float to integer"""
   runs = 1
   """The total number of runs."""
   seed = 1
@@ -163,6 +167,9 @@ def lkh_solver(problem_file, params, pkg='lkh_solver', rosnode='lkh_solver',
   info['stdout'] = stdout
   info['stderr'] = stderr
   # Clean up
-  os.remove(basename+'.pi')
-  os.rmdir(tmp_path)
+  try:
+    os.remove(basename+'.pi')
+  except OSError:
+    pass
+  shutil.rmtree(tmp_path, ignore_errors=True)
   return tour, info
