@@ -18,6 +18,7 @@ void NormalizeNodeList()
         t2 = SUC(t1);
         t1->Pred = PRED(t1);
         t1->Suc = t2;
+        t1->Parent = 0;
     }
     while ((t1 = t2) != FirstNode);
 }

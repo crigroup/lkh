@@ -12,8 +12,8 @@
 
 void RecordBestTour()
 {
-    int i, Dim = ProblemType != ATSP ? Dimension : Dimension / 2;
+    int i;
 
-    for (i = 0; i <= Dim; i++)
+    for (i = 0; i <= DimensionSaved; i++)
         BestTour[i] = BetterTour[i];
 }

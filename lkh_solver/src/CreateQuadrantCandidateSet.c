@@ -32,7 +32,8 @@ static int Level = 0;
  * augmented by the nearest remaining nodes overall to bring 
  * the total up to K.
  *
- * The function is called from the CreateCandidateSet function.
+ * The function is called from the CreateCandidateSet and
+ * AddExtraCandidates functions.
  */
 
 void CreateQuadrantCandidateSet(int K)
@@ -166,7 +167,8 @@ void CreateQuadrantCandidateSet(int K)
  * The CreateNearestNeighborCandidateSet function creates for each node
  * a candidate set consisting of the K least costly neighbor edges.
  *
- * The function is called from the CreateCandidateSet function.
+ * The function is called from the CreateCandidateSet and 
+ * AddExtraCandidates functions.
  */
 
 void CreateNearestNeighborCandidateSet(int K)
@@ -479,7 +481,7 @@ static int InCandidateSet(Node * N, Node * T)
 static void NQN(Node * N, int Q, int start, int end, int K)
 {
     int mid = (start + end) / 2, d;
-    Node *T = KDTree[mid], P = {0};
+    Node *T = KDTree[mid], P = { 0 };
     int axis = T->Axis;
 
     if (K == 0)

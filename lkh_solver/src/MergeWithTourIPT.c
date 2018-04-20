@@ -1,7 +1,7 @@
 #include "LKH.h"
 
 /*
- * The MergeWithTour function attempts to find a short tour
+ * The MergeWithTourIPT function attempts to find a short tour
  * by merging a given tour, T1, with another tour, T2. 
  * T1 is given by the Suc pointers of its nodes. 
  * T2 is given by the Next pointers of its nodes.
@@ -13,7 +13,7 @@
  * that the cardinality of edges connecting A with B is exactly two. 
  * If this is possible, any replacement of T1's A-edges with T2's
  * A-edges results in a tour. The same holds for the B-edges. 
- * If such a replacement reduces the cost of one the tours then make it. 
+ * If such a replacement reduces the cost of one the tours, then make it. 
  *
  * If a tour T shorter than T2 is found, Pred and Suc of each node
  * point to its neighbors in T, and T's cost is returned.
@@ -28,18 +28,24 @@
  *   Physical Review E, Volume 59, Number 4, pp. 4667-4674, 1999.
  */
 
-GainType MergeWithTour()
+GainType MergeWithTourIPT()
 {
     int Rank = 0, Improved1 = 0, Improved2 = 0;
     int SubSize1, SubSize2, MaxSubSize1, NewDimension = 0, Forward;
     int MinSubSize, BestMinSubSize = 3, MinForward = 0;
     GainType Cost1 = 0, Cost2 = 0, Gain, OldCost1, MinGain = 0;
     Node *N, *NNext, *N1, *N2, *MinN1, *MinN2, *First = 0, *Last;
+    GainType Penalty1 = 0, Penalty2 = 0, NewPenalty;
 
+    if (Penalty) {
+        CurrentPenalty = PLUS_INFINITY;
+        Penalty1 = Penalty();
+    }
     N = FirstNode;
-    do
+    do {
         N->Suc->Pred = N->Next->Prev = N;
-    while ((N = N->Suc) != FirstNode);
+        N->SucSaved = N->Suc;
+    } while ((N = N->Suc) != FirstNode);
     do {
         Cost1 += N->Cost = C(N, N->Suc) - N->Pi - N->Suc->Pi;
         if ((N->Suc == N->Prev || N->Suc == N->Next) &&
@@ -51,8 +57,23 @@ GainType MergeWithTour()
             First = N;
         }
     } while ((N = N->Suc) != FirstNode);
-    if (NewDimension == 0)
+    if (NewDimension == 0) {
+        CurrentPenalty = Penalty1;
         return Cost1 / Precision;
+    }
+
+    if (Penalty) {
+        N = FirstNode;
+        do {
+            N->OldSuc = N->Suc;
+            (N->Suc = N->Next)->Pred = N;
+        } while ((N = N->Suc) != FirstNode);
+        CurrentPenalty = PLUS_INFINITY;
+        Penalty2 = Penalty();
+        do
+            (N->Suc = N->OldSuc)->Pred = N;
+        while ((N = N->Suc) != FirstNode);
+    }
     do {
         Cost2 += N->NextCost = N->Next == N->Pred ? N->Pred->Cost :
             N->Next == N->Suc ? N->Cost :
@@ -182,8 +203,10 @@ GainType MergeWithTour()
     } while (MinN1);
 
     if (Cost1 < Cost2 ? !Improved1 : Cost2 < Cost1 ? !Improved2 :
-        !Improved1 || !Improved2)
+        !Improved1 || !Improved2) {
+        CurrentPenalty = Penalty1;
         return OldCost1 / Precision;
+    }
 
     /* Expand the best tour into a full tour */
     N = FirstNode;
@@ -208,11 +231,26 @@ GainType MergeWithTour()
             N->OldSuc = First;
         N->Mark = N;
     } while ((N = N->OldSuc) != First);
-    Hash = 0;
-    do {
+    do
         N->OldSuc->Pred = N;
-        Hash ^= Rand[N->Id] * Rand[N->OldSuc->Id];
-    }
     while ((N = N->Suc = N->OldSuc) != First);
+    if (Penalty) {
+        CurrentGain = 1;
+        CurrentPenalty = Penalty1 <= Penalty2 ? Penalty1 : Penalty2;
+        NewPenalty = Penalty();
+        if (NewPenalty > Penalty1 || NewPenalty > Penalty2) {
+            do
+                N->SucSaved->Pred = N;
+            while ((N = N->Suc = N->SucSaved) != First);
+            CurrentPenalty = Penalty1;
+            return OldCost1 / Precision;
+        }
+        CurrentPenalty = NewPenalty;
+    }
+    Hash = 0;
+    N = First;
+    do
+        Hash ^= Rand[N->Id] * Rand[N->Suc->Id];
+    while ((N = N->Suc) != First);
     return (Cost1 <= Cost2 ? Cost1 : Cost2) / Precision;
 }

@@ -34,7 +34,7 @@ void AdjustCandidateSet()
                 !IsBackboneCandidate(From, To))
                 continue;
             for (NFrom = From->CandidateSet; NFrom->To && NFrom->To != To;
-                NFrom++)
+                 NFrom++)
                 Count++;
             if (!NFrom->To) {
                 /* Add new candidate edge */

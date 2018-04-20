@@ -2,8 +2,8 @@
 #include "Genetic.h"
 
 /*
- * The PrintParameters function prints the problem parameters to 
- * standard output. 
+ * The PrintParameters function prints the problem parameters to
+ * standard output.
 */
 
 void PrintParameters()
@@ -13,6 +13,10 @@ void PrintParameters()
     printff("ASCENT_CANDIDATES = %d\n", AscentCandidates);
     printff("BACKBONE_TRIALS = %d\n", BackboneTrials);
     printff("BACKTRACKING = %s\n", Backtracking ? "YES" : "NO");
+    if (BWTSP_B == 0)
+        printff("# BWTSP =\n");
+    else
+        printff("BWTSP = %d %d %d\n", BWTSP_B, BWTSP_Q, BWTSP_L);
     if (CandidateFiles == 0)
         printff("# CANDIDATE_FILE =\n");
     else
@@ -24,6 +28,10 @@ void PrintParameters()
             CandidateSetType == NN ? "NEAREST-NEIGHBOR" :
             CandidateSetType == QUADRANT ? "QUADRANT" : "",
             DelaunayPure ? " PURE" : "");
+    if (Salesmen > 1)
+        printff("DEPOT = %d\n", MTSPDepot);
+    else
+        printff("# DEPOT =\n");
     if (Excess >= 0)
         printff("EXCESS = %g\n", Excess);
     else
@@ -43,12 +51,16 @@ void PrintParameters()
     printff("INITIAL_STEP_SIZE = %d\n", InitialStepSize);
     printff("INITIAL_TOUR_ALGORITHM = %s\n",
             InitialTourAlgorithm == BORUVKA ? "BORUVKA" :
+            InitialTourAlgorithm == CVRP_ALG ? "CVRP" :
             InitialTourAlgorithm == GREEDY ? "GREEDY" :
             InitialTourAlgorithm == MOORE ? "MOORE" :
+            InitialTourAlgorithm == MTSP_ALG ? "MTSP" :
             InitialTourAlgorithm == NEAREST_NEIGHBOR ? "NEAREST-NEIGHBOR" :
             InitialTourAlgorithm ==
             QUICK_BORUVKA ? "QUICK-BORUVKA" :
-            InitialTourAlgorithm == SIERPINSKI ? "SIERPINSKI" : "WALK");
+            InitialTourAlgorithm == SIERPINSKI ? "SIERPINSKI" : 
+            InitialTourAlgorithm == SOP_ALG ? "SOP" :
+            InitialTourAlgorithm == TSPDL_ALG ? "TSPDL" : "WALK");
     printff("%sINITIAL_TOUR_FILE = %s\n",
             InitialTourFileName ? "" : "# ",
             InitialTourFileName ? InitialTourFileName : "");
@@ -56,12 +68,13 @@ void PrintParameters()
     printff("%sINPUT_TOUR_FILE = %s\n",
             InputTourFileName ? "" : "# ",
             InputTourFileName ? InputTourFileName : "");
-    printff("KICK_TYPE = %d\n", KickType);
     printff("KICKS = %d\n", Kicks);
+    printff("KICK_TYPE = %d\n", KickType);
     if (MaxBreadth == INT_MAX)
         printff("# MAX_BREADTH =\n");
     else
         printff("MAX_BREADTH = %d\n", MaxBreadth);
+    printff("MAKESPAN = %s\n", TSPTW_Makespan ? "YES" : "NO");
     printff("MAX_CANDIDATES = %d %s\n",
             MaxCandidates, CandidateSetSymmetric ? "SYMMETRIC" : "");
     if (MaxSwaps >= 0)
@@ -77,7 +90,25 @@ void PrintParameters()
     else
         for (i = 0; i < MergeTourFiles; i++)
             printff("MERGE_TOUR_FILE = %s\n", MergeTourFileName[i]);
-    printff("MOVE_TYPE = %d\n", MoveType);
+    printff("MOVE_TYPE = %d %s\n", MoveType,
+            MoveTypeSpecial ? "SPECIAL" : "");
+    if (Salesmen > 1) {
+        printff("MTSP_MIN_SIZE = %d\n", MTSPMinSize);
+        printff("MTSP_MAX_SIZE = %d\n", MTSPMaxSize);
+        if (MTSPObjective == MINMAX)
+            printff("MTSP_OBJECTIVE = MINMAX\n");
+        else if (MTSPObjective == MINMAX_SIZE)
+            printff("MTSP_OBJECTIVE = MINMAX_SIZE\n");
+        else if (MTSPObjective == MINSUM)
+            printff("MTSP_OBJECTIVE = MINSUM\n");
+    } else {
+        printff("# MTSP_MIN_SIZE =\n");
+        printff("# MTSP_MAX_SIZE =\n");
+        printff("# MTSP_OBJECTIVE =\n");
+    }
+    printff("%sMTSP_SOLUTION_FILE = %s\n",
+            MTSPSolutionFileName ? "" : "# ",
+            MTSPSolutionFileName ? MTSPSolutionFileName : "");
     printff("%sNONSEQUENTIAL_MOVE_TYPE = %d\n",
             PatchingA > 1 ? "" : "# ", NonsequentialMoveType);
     if (Optimum == MINUS_INFINITY)
@@ -102,9 +133,18 @@ void PrintParameters()
     printff("%sPROBLEM_FILE = %s\n",
             ProblemFileName ? "" : "# ",
             ProblemFileName ? ProblemFileName : "");
+    printff("RECOMBINATION = %s\n", Recombination == IPT ? "IPT" :
+            Recombination == GPX2 ? "GPX2" :
+            "UNKNOWN");
     printff("RESTRICTED_SEARCH = %s\n", RestrictedSearch ? "YES" : "NO");
     printff("RUNS = %d\n", Runs);
+    printff("SALESMEN = %d\n", Salesmen);
+    printff("SCALE = %d\n", Scale);
     printff("SEED = %u\n", Seed);
+    if (Salesmen > 1)
+        printff("%sSINTEF_SOLUTION_FILE = %s\n",
+                SINTEFSolutionFileName ? "" : "# ",
+                SINTEFSolutionFileName ? SINTEFSolutionFileName : "");
     printff("STOP_AT_OPTIMUM = %s\n", StopAtOptimum ? "YES" : "NO");
     printff("SUBGRADIENT = %s\n", Subgradient ? "YES" : "NO");
     if (SubproblemSize == 0)
@@ -123,8 +163,9 @@ void PrintParameters()
     printff("%sSUBPROBLEM_TOUR_FILE = %s\n",
             SubproblemTourFileName ? "" : "# ",
             SubproblemTourFileName ? SubproblemTourFileName : "");
-    printff("SUBSEQUENT_MOVE_TYPE = %d\n",
-            SubsequentMoveType == 0 ? MoveType : SubsequentMoveType);
+    printff("SUBSEQUENT_MOVE_TYPE = %d %s\n",
+            SubsequentMoveType == 0 ? MoveType : SubsequentMoveType,
+            SubsequentMoveTypeSpecial ? "SPECIAL" : "");
     printff("SUBSEQUENT_PATCHING = %s\n",
             SubsequentPatching ? "YES" : "NO");
     if (TimeLimit == DBL_MAX)
@@ -133,5 +174,6 @@ void PrintParameters()
         printff("TIME_LIMIT = %0.1f\n", TimeLimit);
     printff("%sTOUR_FILE = %s\n",
             TourFileName ? "" : "# ", TourFileName ? TourFileName : "");
-    printff("TRACE_LEVEL = %d\n\n", TraceLevel);
+    printff("TRACE_LEVEL = %d\n", TraceLevel);
+    printff("VEHICLES = %d\n\n", Salesmen);
 }

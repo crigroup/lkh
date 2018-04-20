@@ -95,11 +95,12 @@ static void KCenterClustering(int K)
             }
         } while ((N = N->Suc) != FirstNode);
         do {
-           if ((d = Distance(N, Center[i])) < N->Cost) {
-               N->Cost = d;
-               N->Subproblem = i;
-           } 
+            if ((d = Distance(N, Center[i])) < N->Cost) {
+                N->Cost = d;
+                N->Subproblem = i;
+            }
         } while ((N = N->Suc) != FirstNode);
     }
+    AdjustClusters(K, Center);
     free(Center);
 }

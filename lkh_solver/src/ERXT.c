@@ -46,9 +46,12 @@ void ERXT()
     while ((N = N->Suc) != FirstNode);
     if (Dimension == DimensionSaved)
         FirstNode = &NodeSet[1 + Random() % Dimension];
-    else
+    else {
         for (i = Random() % Dimension; i > 0; i--)
             FirstNode = FirstNode->Suc;
+        if (FirstNode->Id <= DimensionSaved)
+            FirstNode += DimensionSaved;
+    }
     N = FirstNode;
     N->V = 1;
     FirstFree = N->Suc;
@@ -137,5 +140,11 @@ static Node *SelectNext(Node * N)
             Tabu--;
         return Next;
     }
-    return FirstFree;
+    Next = FirstFree;
+    while (Forbidden(N, Next)) {
+        Next = Next->Suc;
+        if (Next == FirstFree)
+            break;
+    }
+    return Next;
 }

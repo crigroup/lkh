@@ -7,7 +7,7 @@
  * of the tour. The population is kept sorted in increasing fitness order.
  */
 
-void AddToPopulation(GainType Cost)
+void AddToPopulation(GainType Penalty, GainType Cost)
 {
     int i, *P;
     Node *N;
@@ -18,15 +18,20 @@ void AddToPopulation(GainType Cost)
         for (i = 0; i < MaxPopulationSize; i++)
             assert(Population[i] =
                    (int *) malloc((1 + Dimension) * sizeof(int)));
+        assert(PenaltyFitness =
+               (GainType *) malloc(MaxPopulationSize * sizeof(GainType)));
         assert(Fitness =
                (GainType *) malloc(MaxPopulationSize * sizeof(GainType)));
     }
-    for (i = PopulationSize; i >= 1 && Cost < Fitness[i - 1]; i--) {
+    for (i = PopulationSize;
+         i >= 1 && SmallerFitness(Penalty, Cost, i - 1); i--) {
+        PenaltyFitness[i] = PenaltyFitness[i - 1];
         Fitness[i] = Fitness[i - 1];
         P = Population[i];
         Population[i] = Population[i - 1];
         Population[i - 1] = P;
     }
+    PenaltyFitness[i] = Penalty;
     Fitness[i] = Cost;
     P = Population[i];
     N = FirstNode;
@@ -57,6 +62,8 @@ void ApplyCrossover(int i, int j)
         printff("Crossover(%d,%d)\n", i + 1, j + 1);
     /* Apply the crossover operator */
     Crossover();
+    if (ProblemType == SOP)
+        SOP_RepairTour();
 }
 
 #define Free(s) { free(s); s = 0; }
@@ -73,6 +80,7 @@ void FreePopulation()
         for (i = 0; i < MaxPopulationSize; i++)
             Free(Population[i]);
         Free(Population);
+        Free(PenaltyFitness);
         Free(Fitness);
     }
     PopulationSize = 0;
@@ -86,17 +94,18 @@ void FreePopulation()
  * made by binary search.
  */
 
-int HasFitness(GainType Cost)
+int HasFitness(GainType Penalty, GainType Cost)
 {
     int Low = 0, High = PopulationSize - 1;
     while (Low < High) {
         int Mid = (Low + High) / 2;
-        if (Fitness[Mid] < Cost)
+        if (LargerFitness(Penalty, Cost, Mid))
             Low = Mid + 1;
         else
             High = Mid;
     }
-    return High >= 0 && Fitness[High] == Cost;
+    return High >= 0 && PenaltyFitness[High] == Penalty &&
+        Fitness[High] == Cost;
 }
 
 /*
@@ -158,10 +167,21 @@ void PrintPopulation()
     int i;
     printff("Population:\n");
     for (i = 0; i < PopulationSize; i++) {
-        printff("%3d: " GainFormat, i + 1, Fitness[i]);
-        if (Optimum != MINUS_INFINITY && Optimum != 0)
-            printff(", Gap = %0.4f%%",
-                    100.0 * (Fitness[i] - Optimum) / Optimum);
+        printff("%3d: ", i + 1);
+        if (Penalty)
+            printff(GainFormat "_" GainFormat,
+                    PenaltyFitness[i], Fitness[i]);
+        else
+            printff(GainFormat, Fitness[i]);
+        if (Optimum != MINUS_INFINITY && Optimum != 0) {
+            if (MTSPObjective == MINMAX || MTSPObjective == MINMAX_SIZE ||
+                ProblemType == CCVRP || ProblemType == TRP)
+                printff(", Gap = %0.4f%%",
+                        100.0 * (PenaltyFitness[i] - Optimum) / Optimum);
+            else
+                printff(", Gap = %0.4f%%",
+                        100.0 * (Fitness[i] - Optimum) / Optimum);
+        }
         printff("\n");
     }
 }
@@ -172,12 +192,13 @@ void PrintPopulation()
  * The population is kept sorted in increasing fitness order.
  */
 
-void ReplaceIndividualWithTour(int i, GainType Cost)
+void ReplaceIndividualWithTour(int i, GainType Penalty, GainType Cost)
 {
     int j, *P;
     Node *N;
 
     assert(i >= 0 && i < PopulationSize);
+    PenaltyFitness[i] = Penalty;
     Fitness[i] = Cost;
     P = Population[i];
     N = FirstNode;
@@ -186,18 +207,22 @@ void ReplaceIndividualWithTour(int i, GainType Cost)
         N = N->Suc;
     }
     P[0] = P[Dimension];
-    while (i >= 1 && Cost < Fitness[i - 1]) {
+    while (i >= 1 && SmallerFitness(Penalty, Cost, i - 1)) {
+        PenaltyFitness[i] = PenaltyFitness[i - 1];
         Fitness[i] = Fitness[i - 1];
         Population[i] = Population[i - 1];
         i--;
     }
+    PenaltyFitness[i] = Cost;
     Fitness[i] = Cost;
     Population[i] = P;
-    while (i < PopulationSize - 1 && Cost > Fitness[i + 1]) {
+    while (i < PopulationSize - 1 && LargerFitness(Penalty, Cost, i + 1)) {
+        PenaltyFitness[i] = PenaltyFitness[i + 1];
         Fitness[i] = Fitness[i + 1];
         Population[i] = Population[i + 1];
         i++;
     }
+    PenaltyFitness[i] = Penalty;
     Fitness[i] = Cost;
     Population[i] = P;
 }
@@ -207,10 +232,11 @@ void ReplaceIndividualWithTour(int i, GainType Cost)
  * the tour (given by OldSuc) and individual i. 
  */
 
-static int DistanceToIndividual(int i) { 
+static int DistanceToIndividual(int i)
+{
     int Count = 0, j, *P = Population[i];
     Node *N;
-    
+
     for (j = 0; j < Dimension; j++) {
         N = &NodeSet[P[j]];
         (N->Next = &NodeSet[P[j + 1]])->Prev = N;
@@ -234,12 +260,14 @@ static int DistanceToIndividual(int i) {
  *      Information Sciences 178 (2008) 4421–4433.
  */
 
-int ReplacementIndividual(GainType Cost) {
+int ReplacementIndividual(GainType Penalty, GainType Cost)
+{
     int i, j, d, *P;
     int MinDist = INT_MAX, CMin = PopulationSize - 1;
     Node *N = FirstNode;
     while ((N = N->OldSuc = N->Suc) != FirstNode);
-    for (i = PopulationSize - 1; i >= 0 && Fitness[i] > Cost; i--) {
+    for (i = PopulationSize - 1;
+         i >= 0 && SmallerFitness(Penalty, Cost, i); i--) {
         if ((d = DistanceToIndividual(i)) < MinDist) {
             CMin = i;
             MinDist = d;
@@ -251,7 +279,7 @@ int ReplacementIndividual(GainType Cost) {
     for (j = 0; j < Dimension; j++)
         NodeSet[P[j]].OldSuc = &NodeSet[P[j + 1]];
     for (i = 0; i < PopulationSize; i++)
-        if (i != CMin && (d = DistanceToIndividual(i)) < MinDist)
+        if (i != CMin && (d = DistanceToIndividual(i)) <= MinDist)
             return PopulationSize - 1;
     return CMin;
 }

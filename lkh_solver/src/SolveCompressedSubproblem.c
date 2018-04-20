@@ -28,7 +28,8 @@ SolveCompressedSubproblem(int CurrentSubproblem, int Subproblems,
          Level++) {
         if (TraceLevel >= 1)
             printff("\nCompress subproblem %d (Level %d):", Number, Level);
-        if (!SolveSubproblem(CurrentSubproblem, Subproblems, GlobalBestCost))
+        if (!SolveSubproblem
+            (CurrentSubproblem, Subproblems, GlobalBestCost))
             break;
     }
     RestrictedSearch = RestrictedSearchSaved;

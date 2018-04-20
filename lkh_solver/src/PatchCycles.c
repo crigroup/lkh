@@ -3,18 +3,18 @@
 #include "Sequence.h"
 
 /*
- * The PatchCycles function attempts to improve the tour by patching the 
- * M >= 2 cycles that would appear if the move defined by t[1..2k] and 
- * incl[1..2k] was made. If the composite move results in a shorter 
+ * The PatchCycles function attempts to improve the tour by patching the
+ * M >= 2 cycles that would appear if the move defined by t[1..2k] and
+ * incl[1..2k] was made. If the composite move results in a shorter
  * tour, then the move is made, and the function returns the gain.
  *
  * On entry, Gain is the gain that could be obtained by making the non-
  * feasible move defined by t[1..2k] and incl[1..2k].
- *   
- * The function tries to patch the cycles by interleaving the alternating 
- * path represented by t with one or more alternating cycles. 
- *   
- * The function is called from BestKOptMove.   
+ *
+ * The function tries to patch the cycles by interleaving the alternating
+ * path represented by t with one or more alternating cycles.
+ *
+ * The function is called from BestKOptMove.
  */
 
 static GainType PatchCyclesRec(int k, int m, int M, GainType G0);
@@ -25,23 +25,25 @@ static int CurrentCycle, Patchwork = 0, RecLevel = 0;
 #define MaxPatchwork Dimension
 
 /*
- * The PatchCycles function tries to find a gainful move by patch the cycles 
- * that would occur if the move represented by t[1..2k] and incl[1..2k] was 
- * made using one one or more alternating cycles.
+ * The PatchCycles function tries to find a gainful move by patching the
+ * cycles that would occur if the move represented by t[1..2k] and incl[1..2k]
+ * was made using one one or more alternating cycles.
  * The alternating cycles are put in continuation of t, starting at 2k+1.
  */
 
 GainType PatchCycles(int k, GainType Gain)
 {
-    Node *s1, *s2, *sStart, *sStop;
+    Node *s1, *s2, *sStart, *sStop, *SUCFirstNode = SUC(FirstNode);
     GainType NewGain;
     int M, i;
 
     FindPermutation(k);
     M = Cycles(k);
-    if (M == 1 && Gain > 0) {
+    PenaltyGain = 0;
+    if (M == 1 && (CurrentPenalty > 0 || TSPTW_Makespan || Gain > 0)) {
         MakeKOptMove(k);
-        return Gain;
+        if (Improvement(&Gain, FirstNode, SUCFirstNode))
+            return Gain;
     }
     if (M == 1 || M > PatchingC || k + M > NonsequentialMoveType)
         return 0;
@@ -65,7 +67,7 @@ GainType PatchCycles(int k, GainType Gain)
             /* Find a set of gainful alternating cycles */
             NewGain = PatchCyclesRec(k, 2, M, Gain + C(s1, s2));
             UnmarkDeleted(s1, s2);
-            if (NewGain > 0)
+            if (PenaltyGain > 0 || NewGain > 0)
                 return NewGain;
         }
     }
@@ -74,7 +76,7 @@ GainType PatchCycles(int k, GainType Gain)
 
 static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
 {
-    Node *s1, *s2, *s3, *s4, *s5, *s6, *S3 = 0, *S4 = 0;
+    Node *s1, *s2, *s3, *s4, *s5, *s6, *S3 = 0, *S4 = 0, *SUCs1;
     Candidate *Ns2, *Ns4;
     GainType G1, G2, G3, G4, Gain, CloseUpGain,
         BestCloseUpGain = PatchingAExtended ? MINUS_INFINITY : 0;
@@ -85,6 +87,7 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
     s1 = t[2 * k + 1];
     s2 = t[i = 2 * (k + m) - 2];
     incl[incl[i] = i + 1] = i;
+    SUCs1 = SUC(s1);
 
     /* Choose (s2,s3) as a candidate edge emanating from s2 */
     for (Ns2 = s2->CandidateSet; (s3 = Ns2->To); Ns2++) {
@@ -114,7 +117,8 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
                     if (cycle[i] == NewCycle)
                         cycle[i] = CurrentCycle;
                 /* Extend the current alternating path */
-                if ((Gain = PatchCyclesRec(k, m + 1, M - 1, G2)) > 0) {
+                Gain = PatchCyclesRec(k, m + 1, M - 1, G2);
+                if (PenaltyGain > 0 || Gain > 0) {
                     UnmarkAdded(s2, s3);
                     UnmarkDeleted(s3, s4);
                     goto End_PatchCyclesRec;
@@ -133,13 +137,27 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
                         BestCloseUpGain = CloseUpGain;
                     }
                 }
-            } else if (!Forbidden(s4, s1) && (!c || G2 - c(s4, s1) > 0)
-                       && (Gain = G2 - C(s4, s1)) > 0) {
-                incl[incl[2 * k + 1] = 2 * (k + m)] = 2 * k + 1;
-                MakeKOptMove(k + m);
-                UnmarkAdded(s2, s3);
-                UnmarkDeleted(s3, s4);
-                goto End_PatchCyclesRec;
+            } else if (!Forbidden(s4, s1) &&
+                       (CurrentPenalty > 0 ||
+                        (!c || G2 - c(s4, s1) > 0))) {
+                Gain = G2 - C(s4, s1);
+                if (CurrentPenalty > 0 || TSPTW_Makespan || Gain > 0) {
+                    if (!pSaved) {
+                        assert(pSaved =
+                               (int *) malloc(2 * k * sizeof(int)));
+                        memcpy(pSaved, p + 1, 2 * k * sizeof(int));
+                    }
+                    incl[incl[2 * k + 1] = 2 * (k + m)] = 2 * k + 1;
+                    MakeKOptMove(k + m);
+                    if (Improvement(&Gain, s1, SUCs1)) {
+                        UnmarkAdded(s2, s3);
+                        UnmarkDeleted(s3, s4);
+                        goto End_PatchCyclesRec;
+                    }
+                    memcpy(p + 1, pSaved, 2 * k * sizeof(int));
+                    for (i = 1; i <= 2 * k; i++)
+                        q[p[i]] = i;
+                }
             }
             UnmarkDeleted(s3, s4);
         }
@@ -186,24 +204,25 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
                             || Added(s6, s1))
                             continue;
                         G4 = G3 + C(s5, s6);
-                        if ((!c || G4 - c(s6, s1) > 0) &&
-                            (Gain = G4 - C(s6, s1)) > 0) {
-                            if (!pSaved) {
-                                assert(pSaved =
-                                       (int *) malloc(2 * k *
-                                                      sizeof(int)));
-                                memcpy(pSaved, p + 1, 2 * k * sizeof(int));
-                            }
+                        if (!pSaved) {
+                            assert(pSaved =
+                                   (int *) malloc(2 * k * sizeof(int)));
+                            memcpy(pSaved, p + 1, 2 * k * sizeof(int));
+                        }
+                        Gain = G4 - C(s6, s1);
+                        if (CurrentPenalty > 0 ||
+                            TSPTW_Makespan || Gain > 0) {
                             t[2 * (k + m) + 1] = s5;
                             t[2 * (k + m) + 2] = s6;
                             if (FeasibleKOptMove(k + m + 1)) {
                                 MakeKOptMove(k + m + 1);
-                                goto End_PatchCyclesRec;
+                                if (Improvement(&Gain, s1, SUCs1))
+                                    goto End_PatchCyclesRec;
                             }
-                            memcpy(p + 1, pSaved, 2 * k * sizeof(int));
-                            for (i = 1; i <= 2 * k; i++)
-                                q[p[i]] = i;
                         }
+                        memcpy(p + 1, pSaved, 2 * k * sizeof(int));
+                        for (i = 1; i <= 2 * k; i++)
+                            q[p[i]] = i;
                     }
                 }
             }
@@ -231,7 +250,7 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
         UnmarkAdded(S4, s1);
         RecLevel--;
         PatchingA++;
-        if (Gain <= 0) {
+        if (PenaltyGain <= 0 && Gain <= 0) {
             memcpy(cycle + 1, cycleSaved, 2 * k * sizeof(int));
             memcpy(p + 1, pSaved, 2 * k * sizeof(int));
             for (i = 1; i <= 2 * k; i++)
@@ -239,7 +258,6 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
             CurrentCycle = OldCycle;
         }
     }
-
   End_PatchCyclesRec:
     free(cycleSaved);
     free(pSaved);
@@ -250,7 +268,7 @@ static GainType PatchCyclesRec(int k, int m, int M, GainType G0)
  * The Cycle function returns the number of the cycle containing
  * a given node, N.
  *
- * Time complexity: O(log k). 
+ * Time complexity: O(log k).
  */
 
 static int Cycle(Node * N, int k)
@@ -268,13 +286,13 @@ static int Cycle(Node * N, int k)
 }
 
 /*
- * The ShortestCycle function returns the number of the cycle with 
- * the smallest number of nodes. Note however that if the two-level 
+ * The ShortestCycle function returns the number of the cycle with
+ * the smallest number of nodes. Note however that if the two-level
  * list is used, the number of nodes of each cycle is only approximate
- * (for efficiency reasons). 
+ * (for efficiency reasons).
  *
- * Time complexity: O(k + M), where M = Cycles(k). 
- * 
+ * Time complexity: O(k + M), where M = Cycles(k).
+ *
  * The function may only be called after a call of the Cycles function.
  */
 

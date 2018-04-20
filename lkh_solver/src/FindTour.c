@@ -1,18 +1,18 @@
 #include "LKH.h"
 
 /*
- * After the candidate set has been created the FindTour function is called 
- * a predetermined number of times (Runs). 
+ * After the candidate set has been created the FindTour function is called
+ * a predetermined number of times (Runs).
  *
- * FindTour performs a number of trials, where in each trial it attempts 
- * to improve a chosen initial tour using the modified Lin-Kernighan edge 
- * exchange heuristics. 
+ * FindTour performs a number of trials, where in each trial it attempts
+ * to improve a chosen initial tour using the modified Lin-Kernighan edge
+ * exchange heuristics.
  *
- * Each time a better tour is found, the tour is recorded, and the candidates 
- * are reorderded by the AdjustCandidateSet function. Precedence is given to 
- * edges that are common to two currently best tours. The candidate set is 
- * extended with those tour edges that are not present in the current set. 
- * The original candidate set is re-established at exit from FindTour.  
+ * Each time a better tour is found, the tour is recorded, and the candidates
+ * are reorderded by the AdjustCandidateSet function. Precedence is given to
+ * edges that are common to two currently best tours. The candidate set is
+ * extended with those tour edges that are not present in the current set.
+ * The original candidate set is re-established at exit from FindTour.
  */
 
 static void SwapCandidateSets();
@@ -39,13 +39,15 @@ GainType FindTour()
         OrdinalTourCost /= Precision;
     }
     BetterCost = PLUS_INFINITY;
+    BetterPenalty = CurrentPenalty = PLUS_INFINITY;
     if (MaxTrials > 0)
         HashInitialize(HTable);
     else {
         Trial = 1;
         ChooseInitialTour();
+        CurrentPenalty = PLUS_INFINITY;
+        CurrentPenalty = BetterPenalty = Penalty ? Penalty() : 0;
     }
-
     for (Trial = 1; Trial <= MaxTrials; Trial++) {
         if (GetTime() - EntryTime >= TimeLimit) {
             if (TraceLevel >= 1)
@@ -59,43 +61,51 @@ GainType FindTour()
             for (i = Random() % Dimension; i > 0; i--)
                 FirstNode = FirstNode->Suc;
         ChooseInitialTour();
+        if ((ProblemType == SOP || ProblemType == M1_PDTSP) &&
+            InitialTourAlgorithm != SOP_ALG)
+            SOP_RepairTour();
         Cost = LinKernighan();
-        if (FirstNode->BestSuc) {
+        if (FirstNode->BestSuc && !TSPTW_Makespan) {
             /* Merge tour with current best tour */
             t = FirstNode;
             while ((t = t->Next = t->BestSuc) != FirstNode);
             Cost = MergeWithTour();
         }
         if (Dimension == DimensionSaved && Cost >= OrdinalTourCost &&
-            BetterCost > OrdinalTourCost) {
+            BetterCost > OrdinalTourCost && !TSPTW_Makespan) {
             /* Merge tour with ordinal tour */
             for (i = 1; i < Dimension; i++)
                 NodeSet[i].Next = &NodeSet[i + 1];
             NodeSet[Dimension].Next = &NodeSet[1];
             Cost = MergeWithTour();
         }
-        if (Cost < BetterCost) {
+        if (CurrentPenalty < BetterPenalty ||
+            (CurrentPenalty == BetterPenalty && Cost < BetterCost)) {
             if (TraceLevel >= 1) {
-                printff("* %d: Cost = " GainFormat, Trial, Cost);
-                if (Optimum != MINUS_INFINITY && Optimum != 0)
-                    printff(", Gap = %0.4f%%",
-                            100.0 * (Cost - Optimum) / Optimum);
-                printff(", Time = %0.2f sec. %s\n",
-                        fabs(GetTime() - EntryTime),
-                        Cost < Optimum ? "<" : Cost == Optimum ? "=" : "");
+                printff("* %d: ", Trial);
+                StatusReport(Cost, EntryTime, "");
             }
             BetterCost = Cost;
+            BetterPenalty = CurrentPenalty;
             RecordBetterTour();
-            if (Dimension == DimensionSaved && BetterCost < BestCost)
+            if (BetterPenalty < BestPenalty ||
+                (BetterPenalty == BestPenalty && BetterCost < BestCost))
                 WriteTour(OutputTourFileName, BetterTour, BetterCost);
-            if (StopAtOptimum && BetterCost == Optimum)
-                break;
+            if (StopAtOptimum) {
+                if (ProblemType != CCVRP && ProblemType != TRP &&
+                    MTSPObjective != MINMAX &&
+                    MTSPObjective != MINMAX_SIZE ?
+                    CurrentPenalty == 0 && Cost == Optimum :
+                    CurrentPenalty == Optimum)
+                    break;
+            }
             AdjustCandidateSet();
             HashInitialize(HTable);
             HashInsert(HTable, Hash, Cost);
-        } else if (TraceLevel >= 2)
-            printff("  %d: Cost = " GainFormat ", Time = %0.2f sec.\n",
-                    Trial, Cost, fabs(GetTime() - EntryTime));
+        } else if (TraceLevel >= 2) {
+            printff("  %d: ", Trial);
+            StatusReport(Cost, EntryTime, "");
+        }
         /* Record backbones if wanted */
         if (Trial <= BackboneTrials && BackboneTrials < MaxTrials) {
             SwapCandidateSets();
@@ -126,12 +136,15 @@ GainType FindTour()
             t = t->BestSuc = t->Suc;
         while (t != FirstNode);
     }
-    do
+    Hash = 0;
+    do {
         (t->Suc = t->BestSuc)->Pred = t;
-    while ((t = t->BestSuc) != FirstNode);
+        Hash ^= Rand[t->Id] * Rand[t->Suc->Id];
+    } while ((t = t->BestSuc) != FirstNode);
     if (Trial > MaxTrials)
         Trial = MaxTrials;
     ResetCandidateSet();
+    CurrentPenalty = BetterPenalty;
     return BetterCost;
 }
 

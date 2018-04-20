@@ -2,24 +2,26 @@
 #include "LKH.h"
 #include "Hashing.h"
 #include "Sequence.h"
+#include "BIT.h"
 
 /*
- * The LinKernighan function seeks to improve a tour by sequential 
+ * The LinKernighan function seeks to improve a tour by sequential
  * and non-sequential edge exchanges.
  *
- * The function returns the cost of the resulting tour. 
+ * The function returns the cost of the resulting tour.
  */
 
 GainType LinKernighan()
 {
-    Node *t1, *t2, *SUCt1;
-    GainType Gain, G0, Cost;
+    GainType Cost, Gain, G0;
     int X2, i, it = 0;
+    Node *t1, *t2, *SUCt1;
     Candidate *Nt1;
     Segment *S;
     SSegment *SS;
     double EntryTime = GetTime();
 
+    Cost = 0;
     Reversed = 0;
     S = FirstSegment;
     i = 0;
@@ -43,10 +45,10 @@ GainType LinKernighan()
     FirstActive = LastActive = 0;
     Swaps = 0;
 
-    /* Compute the cost of the initial tour, Cost.
-       Compute the corresponding hash value, Hash.
-       Initialize the segment list.
-       Make all nodes "active" (so that they can be used as t1). */
+    /* Compute the cost of the initial tour, Cost. Compute the
+       corresponding hash value, Hash. Initialize the segment list. Make
+       all nodes "active" (so that they can be used as t1). */
+
     Cost = 0;
     Hash = 0;
     i = 0;
@@ -78,7 +80,7 @@ GainType LinKernighan()
         }
         t1->OldPredExcluded = t1->OldSucExcluded = 0;
         t1->Next = 0;
-        if (Trial == 1 || KickType == 0 || Kicks == 0 ||
+        if (KickType == 0 || Kicks == 0 || Trial == 1 ||
             !InBestTour(t1, t1->Pred) || !InBestTour(t1, t1->Suc))
             Activate(t1);
     }
@@ -86,14 +88,17 @@ GainType LinKernighan()
     if (S->Size < GroupSize)
         SS->Size++;
     Cost /= Precision;
-    if (TraceLevel >= 3 || (TraceLevel == 2 && Cost < BetterCost)) {
-        printff("Cost = " GainFormat, Cost);
-        if (Optimum != MINUS_INFINITY && Optimum != 0)
-            printff(", Gap = %0.4f%%", 100.0 * (Cost - Optimum) / Optimum);
-        printff(", Time = %0.2f sec. %s\n", fabs(GetTime() - EntryTime),
-                Cost < Optimum ? "<" : Cost == Optimum ? "=" : "");
-    }
+    if (TSPTW_Makespan)
+        Cost = TSPTW_CurrentMakespanCost = TSPTW_MakespanCost();
+    CurrentPenalty = PLUS_INFINITY;
+    CurrentPenalty = Penalty ? Penalty() : 0;
+    if (TraceLevel >= 3 ||
+        (TraceLevel == 2 &&
+         (CurrentPenalty < BetterPenalty ||
+          (CurrentPenalty == BetterPenalty && Cost < BetterCost))))
+        StatusReport(Cost, EntryTime, "");
     PredSucCostAvailable = 1;
+    BIT_Update();
 
     /* Loop as long as improvements are found */
     do {
@@ -116,33 +121,34 @@ GainType LinKernighan()
                        (KickType == 0 || Kicks == 0)))))
                     continue;
                 G0 = C(t1, t2);
+                OldSwaps = Swaps = 0;
+                PenaltyGain = 0;
                 /* Try to find a tour-improving chain of moves */
                 do
                     t2 = Swaps == 0 ? BestMove(t1, t2, &G0, &Gain) :
                         BestSubsequentMove(t1, t2, &G0, &Gain);
                 while (t2);
-                if (Gain > 0) {
+                if (PenaltyGain > 0 || Gain > 0) {
                     /* An improvement has been found */
                     assert(Gain % Precision == 0);
                     Cost -= Gain / Precision;
-                    if (TraceLevel >= 3 ||
-                        (TraceLevel == 2 && Cost < BetterCost)) {
-                        printff("Cost = " GainFormat, Cost);
-                        if (Optimum != MINUS_INFINITY && Optimum != 0)
-                            printff(", Gap = %0.4f%%",
-                                    100.0 * (Cost - Optimum) / Optimum);
-                        printff(", Time = %0.2f sec. %s\n",
-                                fabs(GetTime() - EntryTime),
-                                Cost < Optimum ? "<" : Cost ==
-                                Optimum ? "=" : "");
-                    }
+                    CurrentPenalty -= PenaltyGain;
                     StoreTour();
+                    TSPTW_CurrentMakespanCost = Cost;
+                    if (TraceLevel >= 3 ||
+                        (TraceLevel == 2 &&
+                         (CurrentPenalty < BetterPenalty ||
+                          (CurrentPenalty == BetterPenalty &&
+                           Cost < BetterCost))))
+                        StatusReport(Cost, EntryTime, "");
                     if (HashSearch(HTable, Hash, Cost))
                         goto End_LinKernighan;
                     /* Make t1 "active" again */
                     Activate(t1);
+                    OldSwaps = 0;
                     break;
                 }
+                OldSwaps = 0;
                 RestoreTour();
             }
         }
@@ -150,27 +156,26 @@ GainType LinKernighan()
             goto End_LinKernighan;
         HashInsert(HTable, Hash, Cost);
         /* Try to find improvements using non-sequential 4/5-opt moves */
-        Gain = 0;
-        if (Gain23Used && (Gain = Gain23()) > 0) {
+        CurrentPenalty = PLUS_INFINITY;
+        CurrentPenalty = Penalty ? Penalty() : 0;
+        PenaltyGain = 0;
+        if (Gain23Used && ((Gain = Gain23()) > 0 || PenaltyGain > 0)) {
             /* An improvement has been found */
             assert(Gain % Precision == 0);
             Cost -= Gain / Precision;
+            CurrentPenalty -= PenaltyGain;
+            TSPTW_CurrentMakespanCost = Cost;
             StoreTour();
-            if (TraceLevel >= 3 || (TraceLevel == 2 && Cost < BetterCost)) {
-                printff("Cost = " GainFormat, Cost);
-                if (Optimum != MINUS_INFINITY && Optimum != 0)
-                    printff(", Gap = %0.4f%%",
-                            100.0 * (Cost - Optimum) / Optimum);
-                printff(", Time = %0.2f sec. + %s\n",
-                        fabs(GetTime() - EntryTime),
-                        Cost < Optimum ? "<" : Cost == Optimum ? "=" : "");
-            }
+            if (TraceLevel >= 3 ||
+                (TraceLevel == 2 &&
+                 (CurrentPenalty < BetterPenalty ||
+                  (CurrentPenalty == BetterPenalty && Cost < BetterCost))))
+                StatusReport(Cost, EntryTime, "+ ");
             if (HashSearch(HTable, Hash, Cost))
                 goto End_LinKernighan;
         }
     }
-    while (Gain > 0);
-
+    while (PenaltyGain > 0 || Gain > 0);
   End_LinKernighan:
     PredSucCostAvailable = 0;
     NormalizeNodeList();

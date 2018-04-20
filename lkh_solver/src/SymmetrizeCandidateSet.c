@@ -12,7 +12,8 @@ void SymmetrizeCandidateSet()
 
     From = FirstNode;
     do {
-        for (NFrom = From->CandidateSet; NFrom && (To = NFrom->To); NFrom++)
+        for (NFrom = From->CandidateSet; NFrom && (To = NFrom->To);
+             NFrom++)
             AddCandidate(To, From, NFrom->Cost, NFrom->Alpha);
     }
     while ((From = From->Suc) != FirstNode);

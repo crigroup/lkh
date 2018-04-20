@@ -18,7 +18,7 @@ int SegmentSize(Node * ta, Node * tb)
     return (n < 0 ? n + Dimension : n) + 1;
 }
 
-# elif defined TWO_LEVEL_TREE
+#elif defined TWO_LEVEL_TREE
 
 int SegmentSize(Node * ta, Node * tb)
 {

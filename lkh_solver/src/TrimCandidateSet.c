@@ -9,19 +9,24 @@ void TrimCandidateSet(int MaxCandidates)
 {
     Node *From;
     Candidate *NFrom;
-    int Count;
+    int Count, MaxDepotCandidates, MaxCand;
 
+    MaxDepotCandidates = Dimension == 2 * DimensionSaved ?
+        Salesmen : 2 * Salesmen;
+    if (MaxDepotCandidates < MaxCandidates)
+        MaxDepotCandidates = MaxCandidates;
     From = FirstNode;
     do {
+        MaxCand = From->DepotId == 0 ? MaxCandidates : MaxDepotCandidates;
         Count = 0;
-        for (NFrom = From->CandidateSet; NFrom->To; NFrom++)
+        for (NFrom = From->CandidateSet; NFrom && NFrom->To; NFrom++)
             Count++;
-        if (Count > MaxCandidates) {
+        if (Count > MaxCand) {
             assert(From->CandidateSet =
                    (Candidate *) realloc(From->CandidateSet,
-                                         (MaxCandidates +
+                                         (MaxCand +
                                           1) * sizeof(Candidate)));
-            From->CandidateSet[MaxCandidates].To = 0;
+            From->CandidateSet[MaxCand].To = 0;
         }
     } while ((From = From->Suc) != FirstNode);
 }

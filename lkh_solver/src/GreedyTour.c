@@ -1,6 +1,8 @@
 #include "LKH.h"
 #include "Heap.h"
 
+#define Tail SucSaved
+
 /*
  * The GreedyTour function computes a tour using either
  * 
@@ -29,9 +31,9 @@
  * heuristic is used. 
  */
 
-#define Degree V        /* Number of edges currently adjacent to a node */
-#define Mark LastV      /* Mark of a node during breadth-first search   */
-#define Level BestPi    /* Search level */
+#define Degree V                /* Number of edges currently adjacent to a node */
+#define Mark LastV              /* Mark of a node during breadth-first search   */
+#define Level BestPi            /* Search level */
 
 static Node *NearestNeighbor(Node * From);
 static Node *NearestInList(Node * From, Node * First);
@@ -188,7 +190,6 @@ GainType GreedyTour()
             while ((From = From->Next) != FirstNode);
             First->OldPred = Last;
             Last->OldSuc = First;
-            /* Initialize the heap */
             From = First;
             do {
                 if ((From->Nearest = NearestInList(From, First))) {
@@ -214,6 +215,7 @@ GainType GreedyTour()
                     HeapInsert(From);
                 }
             }
+            assert(EdgesInFragments == Dimension);
         }
     }
     /* Orient Pred and Suc so that the list of nodes represents a tour */
@@ -229,10 +231,21 @@ GainType GreedyTour()
     while ((To = From->Suc) != FirstNode);
     To->Pred = From;
     Cost /= Precision;
+    CurrentPenalty = PLUS_INFINITY;
+    CurrentPenalty = Penalty ? Penalty() : 0;
     if (TraceLevel >= 1) {
-        printff(GainFormat, Cost);
-        if (Optimum != MINUS_INFINITY && Optimum != 0)
-            printff(", Gap = %0.1f%%", 100.0 * (Cost - Optimum) / Optimum);
+        if (Salesmen > 1 || ProblemType == SOP)
+            printff(GainFormat "_" GainFormat, CurrentPenalty, Cost);
+        else
+            printff(GainFormat, Cost);
+        if (Optimum != MINUS_INFINITY && Optimum != 0) {
+            if (MTSPObjective == MINMAX || MTSPObjective == MINMAX_SIZE)
+                printff(", Gap = %0.1f%%",
+                        100.0 * (CurrentPenalty - Optimum) / Optimum);
+            else
+                printff(", Gap = %0.1f%%",
+                        100.0 * (Cost - Optimum) / Optimum);
+        }
         printff(", Time = %0.2f sec.\n", fabs(GetTime() - EntryTime));
     }
     return Cost;

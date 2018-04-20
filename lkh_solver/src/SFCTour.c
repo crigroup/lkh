@@ -92,10 +92,18 @@ GainType SFCTour(int CurveType)
         if (!Fixed(N, N->Suc))
             Cost += Distance(N, N->Suc);
     while ((N = N->Suc) != FirstNode);
+    CurrentPenalty = PLUS_INFINITY;
+    CurrentPenalty = Penalty ? Penalty() : 0;
     if (TraceLevel >= 1) {
         printff(GainFormat, Cost);
-        if (Optimum != MINUS_INFINITY && Optimum != 0)
-            printff(", Gap = %0.1f%%", 100.0 * (Cost - Optimum) / Optimum);
+        if (Optimum != MINUS_INFINITY && Optimum != 0) {
+            if (MTSPObjective == MINMAX || MTSPObjective == MINMAX_SIZE)
+                printff(", Gap = %0.1f%%",
+                        100.0 * (CurrentPenalty - Optimum) / Optimum);
+            else
+                printff(", Gap = %0.1f%%",
+                        100.0 * (Cost - Optimum) / Optimum);
+        }
         printff(", Time = %0.2f sec.\n", fabs(GetTime() - EntryTime));
     }
     return Cost;

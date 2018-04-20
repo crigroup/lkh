@@ -30,6 +30,7 @@ Node *Best2OptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
     GainType G1, G2, BestG2 = MINUS_INFINITY;
     int Breadth2 = 0;
 
+    OldSwaps = Swaps;
     if (SUC(t1) != t2)
         Reversed ^= 1;
 
@@ -47,7 +48,8 @@ Node *Best2OptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
     /* Choose (t2,t3) as a candidate edge emanating from t2 */
     for (Nt2 = t2->CandidateSet; (t3 = Nt2->To); Nt2++) {
         if (t3 == t2->Pred || t3 == t2->Suc ||
-            ((G1 = *G0 - Nt2->Cost) <= 0 && GainCriterionUsed &&
+            ((G1 = *G0 - Nt2->Cost) <= 0 &&
+             GainCriterionUsed &&
              ProblemType != HCP && ProblemType != HPP))
             continue;
         /* Choose t4 (only one choice gives a closed tour) */
@@ -56,9 +58,14 @@ Node *Best2OptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
             continue;
         G2 = G1 + C(t3, t4);
         if (!Forbidden(t4, t1) &&
-            (!c || G2 - c(t4, t1) > 0) && (*Gain = G2 - C(t4, t1)) > 0) {
-            Swap1(t1, t2, t3);
-            return 0;
+            (CurrentPenalty > 0 ||
+             TSPTW_Makespan || !c || G2 - c(t4, t1) > 0)) {
+            *Gain = G2 - C(t4, t1);
+            if (CurrentPenalty > 0 || TSPTW_Makespan || *Gain > 0) {
+                Swap1(t1, t2, t3);
+                if (Improvement(Gain, t1, t2))
+                    return 0;
+            }
         }
         if (++Breadth2 > MaxBreadth)
             break;
@@ -81,14 +88,15 @@ Node *Best2OptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
             Exclude(t1, t2);
             Exclude(t3, t4);
             while ((t = BestSubsequentMove(t1, t, &G, Gain)));
-            if (*Gain > 0)
+            if (PenaltyGain > 0 || *Gain > 0)
                 return 0;
+            OldSwaps = 0;
             RestoreTour();
             if (t2 != SUC(t1))
                 Reversed ^= 1;
         }
     }
-    *Gain = 0;
+    *Gain = PenaltyGain = 0;
     if (T4) {
         /* Make the best 2-opt move */
         Swap1(t1, t2, T3);

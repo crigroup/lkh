@@ -10,14 +10,14 @@
  * to the current tree). 
  */
 
-static int HeapCount;    /* Its current number of elements */
-static int HeapCapacity; /* Its capacity */
+int HeapCount;                  /* Its current number of elements */
+static int HeapCapacity;        /* Its capacity */
 
 /*      
- * The MakeHeap function creates an empty heap. 
+ * The HeapMake function creates an empty heap. 
  */
 
-void MakeHeap(int Size)
+void HeapMake(int Size)
 {
     assert(Heap = (Node **) malloc((Size + 1) * sizeof(Node *)));
     HeapCapacity = Size;
@@ -143,4 +143,14 @@ void Heapify()
     int Loc;
     for (Loc = HeapCount / 2; Loc >= 1; Loc--)
         HeapSiftDown(Heap[Loc]);
+}
+
+/*
+ * The HeapClear function empties the heap
+ */
+
+void HeapClear()
+{
+    while (HeapCount > 0)
+        Heap[HeapCount--]->Loc = 0;
 }

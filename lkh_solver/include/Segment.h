@@ -58,6 +58,11 @@
 #define FLIP(a, b, c, d) Flip(a, b, c)
 #endif
 
+#define PREDD(a) ((a)->Parent ? PRED(a) :\
+                 Reversed ? (a)->Suc : (a)->Pred)
+#define SUCC(a) ((a)->Parent ? SUC(a) :\
+                 Reversed ? (a)->Pred : (a)->Suc)
+
 #define Swap1(a1,a2,a3)\
         FLIP(a1,a2,a3,0)
 #define Swap2(a1,a2,a3, b1,b2,b3)\

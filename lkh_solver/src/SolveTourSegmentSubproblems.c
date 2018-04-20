@@ -54,7 +54,10 @@ void SolveTourSegmentSubproblems()
                 FirstNode = FirstNode->SubproblemSuc;
         for (CurrentSubproblem = 1;
              CurrentSubproblem <= Subproblems; CurrentSubproblem++) {
-            for (i = 0, N = FirstNode; i < SubproblemSize;
+            for (i = 0, N = FirstNode;
+                 i < SubproblemSize ||
+                 (FirstNode->Id <= DimensionSaved) != (N->Id <=
+                                                       DimensionSaved);
                  i++, N = N->SubproblemSuc) {
                 N->Subproblem =
                     (Round - 1) * Subproblems + CurrentSubproblem;

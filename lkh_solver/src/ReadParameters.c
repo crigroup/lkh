@@ -2,15 +2,15 @@
 #include "Genetic.h"
 
 /*
- * The ReadParameters function reads the name of a parameter file from 
+ * The ReadParameters function reads the name of a parameter file from
  * standard input and reads the problem parameters from this file.
  *
- * All entries of the parameter file are of the form <keyword >= <value> 
+ * All entries of the parameter file are of the form <keyword >= <value>
  * (or <keyword><whitespace><value>), where <keyword> denotes an alphanumeric
- * keyword and <value> denotes alphanumeric or numeric data. Keywords are not 
- * case sensitive. 
+ * keyword and <value> denotes alphanumeric or numeric data. Keywords are not
+ * case sensitive.
  *
- * The order of specifications in the file is arbitrary. The following 
+ * The order of specifications in the file is arbitrary. The following
  * specification is mandatory.
  *
  * PROBLEM_FILE = <string>
@@ -18,41 +18,49 @@
  *
  * Additional control information may be supplied in the following format:
  *
- * ASCENT_CANDIDATES = <integer>
- * The number of candidate edges to be associated with each node during 
- * the ascent. The candidate set is complemented such that every candidate 
- * edge is associated with both its two end nodes.
+ * ASCENT_CANDIDATES  = <integer>
+ * The number of candidate edges to be associated with each node during the
+ * ascent. The candi¬date set is complemented such that every candidate edge
+ * is associated with both its two end nodes.
  * Default: 50.
  *
  * BACKBONE_TRIALS = <integer>
  * The number of backbone trials in each run.
  * Default: 0.
- * 
+ *
  * BACKTRACKING = { YES | NO }
- * Specifies whether a backtracking K-opt move is to be used as the first 
- * move in a sequence of moves (where K = MOVE_TYPE). 
- * Default: NO.
+ * Specifies whether a backtracking k-opt move is to be used as the first move
+ * in a se¬quence of moves (where k = MOVE_TYPE).
+ * Default: 0.
+ *
+ * BWTSP = <integer> <integer> [ <integer> ]
+ * Specifies the three parameters (B, Q, L) to a BWTSP instance.
+ *   B: Number of black nodes.
+ *   Q: Maximum number of white nodes on "black-to-black" paths.
+ *   L: Maximum length of any "black-to-black" path.
+ * Default: 0 0.
  *
  * CANDIDATE_FILE = <string>
- * Specifies the name of a file to which the candidate sets are to be 
- * written. If, however, the file already exists, the candidate edges are 
- * read from the file. The first line of the file contains the number of
- * nodes. Each of the following lines contains a node number, the number of 
- * the dad of the node in the minimum spanning tree 
- * (0, if the node has no dad), the number of candidate edges emanating 
- * from the node, followed by the candidate edges. For each candidate edge 
- * its end node number and alpha-value are given.
+ * Specifies the name of a file to which the candidate sets are to be written.
+ * If, however, the file already exists, the candidate edges are read from the
+ * file.
+ * The first line of the file contains the number of nodes.
+ * Each of the following lines contains a node number, the number of
+ * the dad of the node in the minimum spanning tree (0, if the node has no dad),
+ * the number of candidate edges emanating from the node, followed by the
+ * candidate edges. For each candidate edge its end node number and alpha-value
+ * are given.
  * It is possible to give more than one CANDIDATE_FILE specification. In this
  * case the given files are read and the union of their candidate edges is
  * used as candidate sets.
  *
- * CANDIDATE_SET_TYPE = { ALPHA | DELAUNAY [ PURE ] | NEAREST-NEIGHBOR | 
- *                        QUADRANT } 
- * Specifies the candidate set type. 
- * ALPHA is LKH's default type. It is applicable in general. 
- * The other four types can only be used for instances given by coordinates. 
- * The optional suffix PURE for the DELAUNAY type specifies that only 
- * edges of the Delaunay graph are used as candidates. 
+ * CANDIDATE_SET_TYPE = { ALPHA | DELAUNAY [ PURE ] | NEAREST-NEIGHBOR |
+ *                        QUADRANT }
+ * Specifies the candidate set type.
+ * ALPHA is LKH's default type. It is applicable in general.
+ * The other four types can only be used for instances given by coordinates.
+ * The optional suffix PURE for the DELAUNAY type specifies that only
+ * edges of the Delaunay graph are used as candidates.
  * Default: ALPHA.
  *
  * COMMENT <string>
@@ -61,27 +69,31 @@
  * # <string>
  * A comment.
  *
+ * DEPOT = <integer>
+ * Specifies the depot node.
+ * Default: 1
+ *
  * EOF
  * Terminates the input data. The entry is optional.
  *
  * EXCESS = <real>
- * The maximum alpha-value allowed for any candidate edge is set to 
- * EXCESS times the absolute value of the lower bound of a solution 
+ * The maximum alpha-value allowed for any candidate edge is set to
+ * EXCESS times the absolute value of the lower bound of a solution
  * tour (determined by the ascent).
- * Default: value of 1.0/DIMENSION.
+ * Default: 1.0/DIMENSION.
  *
  * EXTRA_CANDIDATES = <integer> [ SYMMETRIC ]
  * Number of extra candidate edges to be added to the candidate set
  * of each node. Their candidate set type may be specified after the
  * keyword EXTRA_CANDIDATE_SET_TYPE.
- * The integer may be followed by the keyword SYMMETRIC, signifying 
- * that these extra candidate edges is to be complemented such 
- * that each of them is associated with both its two end nodes. 
+ * The integer may be followed by the keyword SYMMETRIC, signifying
+ * that these extra candidate edges is to be complemented such
+ * that each of them is associated with both its two end nodes.
  * Default: 0
  *
- * EXTRA_CANDIDATE_SET_TYPE = { NEAREST-NEIGHBOR | QUADRANT } 
+ * EXTRA_CANDIDATE_SET_TYPE = { NEAREST-NEIGHBOR | QUADRANT }
  * The candidate set type of extra candidate edges.
- * Default: QUADRANT                           
+ * Default: QUADRANT
  *
  * GAIN23 = { YES | NO }
  * Specifies whether the Gain23 function is used.
@@ -93,131 +105,164 @@
  *
  * INITIAL_PERIOD = <integer>
  * The length of the first period in the ascent.
- * Default: value of DIMENSION/2 (but at least 100). 
+ * Default: DIMENSION/2 (but at least 100).
  *
  * INITIAL_STEP_SIZE = <integer>
  * The initial step size used in the ascent.
  * Default: 1.
  *
- * INITIAL_TOUR_ALGORITHM = { BORUVKA | GREEDY | MOORE | NEAREST-NEIGHBOR | 
- *                            QUICK-BORUVKA | SIERPINSKI | WALK }
+ * INITIAL_TOUR_ALGORITHM = { BORUVKA | CVRP | GREEDY | MOORE | MTSP |
+ *       NEAREST-NEIGHBOR | QUICK-BORUVKA | SIERPINSKI | SOP | TSPDL | WALK }
  * Specifies the algorithm for obtaining an initial tour.
  * Default: WALK.
- *  
+ *
  * INITIAL_TOUR_FILE = <string>
- * Specifies the name of a file containing a tour to be used as the 
- * initial tour in the search. The tour is given by a list of integers 
+ * Specifies the name of a file containing a tour to be used as the
+ * initial tour in the search. The tour is given by a list of integers
  * giving the sequence in which the nodes are visited in the tour.
  * The tour is terminated by a -1.
  * See also INITIAL_TOUR_FRACTION.
- * 
+ *
  * INITIAL_TOUR_FRACTION = <real in [0;1]>
- * Specifies the fraction of the initial tour to be constructed by means 
+ * Specifies the fraction of the initial tour to be constructed by means
  * of INITIAL_TOUR_FILE edges.
- * Default: 1.0  
+ * Default: 1.0
  *
  * INPUT_TOUR_FILE = <string>
- * Specifies the name of a file containing a tour. The tour is used to 
- * limit the search (the last edge to be excluded in a non-gainful move 
- * must not belong to the tour). In addition, the Alpha field of its 
- * edges is set to zero. The tour is given by a list of integers giving 
- * the sequence in which the nodes are visited in the tour. The tour is 
- * terminated by a -1. 
+ * Specifies the name of a file containing a tour. The tour is used to
+ * limit the search (the last edge to be excluded in a non-gainful move
+ * must not belong to the tour). In addition, the Alpha field of its
+ * edges is set to zero. The tour is given by a list of integers giving
+ * the sequence in which the nodes are visited in the tour. The tour is
+ * terminated by a -1.
  *
  * KICK_TYPE = <integer>
- * Specifies the value of K for a random K-swap kick. If KICK_TYPE is 
- * zero, then the LKH's special kicking strategy, WALK, is used.
+ * Specifies the value of k for a random k-swap kick (an extension of the
+ * double-bridge move). If KICK_TYPE is zero, then the LKH's special kicking
+ * strategy, WALK, is used.
  * Default: 0.
  *
  * KICKS = <integer>
  * Specifies the number of times to "kick" a tour found by Lin-Kernighan.
- * Each kick is a random K-swap-kick move. However, KICKS is zero, then 
+ * Each kick is a random k-swap-kick move. However, if KICKS is zero, then
  * LKH's special kicking strategy, WALK, is used.
  * Default: 1.
  *
+ * MAKESPAN = { YES | NO }
+ * Specifies if makespan optimization is to be used for a TSPTW instance.
+ * Default: NO.
+ *
  * MAX_BREADTH = <integer>
- * The maximum number of candidate edges considered at each level of 
+ * The maximum number of candidate edges considered at each level of
  * the search for a move.
- * Default: INT_MAX. 
+ * Default: INT_MAX.
  *
  * MAX_CANDIDATES = <integer> [ SYMMETRIC ]
  * The maximum number of candidate edges to be associated with each node.
- * The integer may be followed by the keyword SYMMETRIC, signifying 
- * that the candidate set is to be complemented such that every candidate 
- * edge is associated with both its two end nodes. 
+ * The integer may be followed by the keyword SYMMETRIC, signifying
+ * that the candidate set is to be complemented such that every candidate
+ * edge is associated with both its two end nodes.
  * If MAX_CANDIDATES is zero the candidate sets are made up of the
- * edges represented in the CANDIDATE_FILEs, the INITIAL_TOUR_FILE, 
+ * edges represented in the CANDIDATE_FILEs, the INITIAL_TOUR_FILE,
  * the INPUT_TOUR_FILE, the SUBPROBLEM_TOUR_FILE, and the MERGE_TOUR_FILEs.
  * Default: 5.
- *   
+ *
  * MAX_SWAPS = <integer>
- * Specifies the maximum number of swaps (flips) allowed in any search 
+ * Specifies the maximum number of swaps (flips) allowed in any search
  * for a tour improvement.
- * Default: value of DIMENSION.
+ * Default: DIMENSION.
  *
  * MAX_TRIALS = <integer>
  * The maximum number of trials in each run.
  * Default: number of nodes (DIMENSION, given in the problem file).
- * 
- * MERGE_TOUR_FILE = <string>
- * Specifies the name of a tour to be merged. The edges of the tour are 
- * added to the candidate sets.
- * It is possible to give more than two MERGE_TOUR_FILE specifications. 
  *
- * MOVE_TYPE = <integer>
- * Specifies the sequential move type to be used as submove in Lin-Kernighan. 
- * A value K >= 2 signifies that a sequential K-opt move is used.
+ * MERGE_TOUR_FILE = <string>
+ * Specifies the name of a tour to be merged. The edges of the tour are
+ * added to the candidate sets.
+ * It is possible to give more than two MERGE_TOUR_FILE specifications.
+ *
+ * MOVE_TYPE = <integer> [ SPECIAL ]
+ * Specifies the move type to be used in local search.
+ * An integer value k >= 2 signifies that a sequential k-opt move is to be used.
+ * The specifier SPECIAL can be given in order to use LKH-3’s specially
+ * designed moves. For this type of moves, k must be 3 or 5.
  * Default: 5.
  *
+ * MTSP_MIN_SIZE = <integer>
+ * Specifies the minimum number of cities each salesman must visit in an
+ * MTSP or CVRP instance. If negative, its value is set to
+ *     DIMENSION/(ceil(1.0*DIMENSION/MTSP_MAX_SIZE) + 1)
+ * Default: 0
+ *
+ * MTSP_MAX_SIZE = <integer>
+ * Specifies the maximum number of cities each salesman may visit in an
+ * MTSP or CVRP instance.
+ * Default: DIMENSION-1.
+ *
+ * MTSP_OBJECTIVE = [ MINMAX | MINMAX_SIZE | MINSUM ]
+ * Specifies the objective function type for a multiple traveling salesman
+ * problem.
+ *      MINMAX      - Minimize the length of the longest route.
+ *      MINMAX_SIZE - Minimize the size of the largest route.
+ *      MINSUM      - Minimize the length of the overall tour.
+ *                    All routes must satisfy the MTSP_MIN_SIZE and
+ *                    MTSP_MAX_SIZE constraints.
+ *
+ * MTSP_SOLUTION_FILE = <string>
+ * Specifies the name of a file where the solution of an MTSP (or VRP) instance
+ * is to be written.
+ * The character $ in the name has a spe¬cial meaning. All occurrences are
+ * replaced by the cost of the tour.
+ *
  * NONSEQUENTIAL_MOVE_TYPE = <integer>
- * Specifies the nonsequential move type to be used. A value K >= 4 
- * signifies that attempts are made to improve a tour by nonsequential 
+ * Specifies the nonsequential move type to be used. A value K >= 4
+ * signifies that attempts are made to improve a tour by nonsequential
  * k-opt moves where 4 <= k <= K. Note, however, that the effect depends
- * on the specifications of PATCHING_C and PATCHING_A. 
+ * on the specifications of PATCHING_C and PATCHING_A.
  * Default: value of (MOVE_TYPE + PATCHING_C + PATCHING_A - 1).
  *
  * OUTPUT_TOUR_FILE = <string>
  * Specifies the name of a file where the best tour is to be written.
- * Each time a trial has produced a new best tour, the tour is written 
- * to this file.  
- * The character '$' in the name has a special meaning. All occurrences
- * are replaced by the cost of the tour.      
+ * Each time a trial has produced a new best tour, the tour is written
+ * to this file.
+ * The character $ in the name has a special meaning. All occurrences
+ * are replaced by the cost of the tour.
  *
  * OPTIMUM = <integer>
- * Known optimal tour length. If STOP_AT_OPTIMUM is YES, a run will be 
+ * Known optimal tour length. If STOP_AT_OPTIMUM is YES, a run will be
  * terminated if the tour length becomes equal to this value.
- * Default: value of MINUS_INFINITY.
+ * Default: MINUS_INFINITY.
  *
  * PATCHING_A = <integer> [ RESTRICTED | EXTENDED ]
  * The maximum number of disjoint alternating cycles to be used for
- * patching. An attempt to patch cycles is made if the corresponding 
- * non-sequential move is gainful. 
+ * patching. An attempt to patch cycles is made if the corresponding
+ * non-sequential move is gainful.
  * The integer may be followed by the keyword RESTRICTED or EXTENDED.
  * The keyword RESTRICTED signifies that gainful moves are only
- * considered if all its inclusion edges are candidate edges.  
- * The keyword EXTENDED signifies that the non-sequential move need 
- * not be gainful if only all its inclusion edges are candidate edges.  
+ * considered if all its inclusion edges are candidate edges.
+ * The keyword EXTENDED signifies that the non-sequential move need
+ * not be gainful if only all its inclusion edges are candidate edges.
  * Default: 1.
- *     
+ *
  * PATCHING_C = <integer> [ RESTRICTED | EXTENDED ]
- * The maximum number of disjoint cycles to be patched in an attempt 
- * to find a feasible and gainful move. An attempt to patch cycles is 
- * made if the corresponding non-sequential move is gainful. 
+ * The maximum number of disjoint cycles to be patched in an attempt
+ * to find a feasible and gainful move. An attempt to patch cycles is
+ * made if the corresponding non-sequential move is gainful.
  * The integer may be followed by the keyword RESTRICTED or EXTENDED.
  * The keyword RESTRICTED signifies that gainful moves are only
- * considered if all its inclusion edges are candidate edges.  
- * The keyword EXTENDED signifies that the non-sequential move need 
- * not be gainful if only all its inclusion edges are candidate edges. 
+ * considered if all its inclusion edges are candidate edges.
+ * The keyword EXTENDED signifies that the non-sequential move need
+ * not be gainful if only all its inclusion edges are candidate edges.
  * Default: 0.
- * 
+ *
  * PI_FILE = <string>
- * Specifies the name of a file to which penalties (Pi-values determined 
- * by the ascent) are to be written. If the file already exists, the 
- * penalties are read from the file, and the ascent is skipped. 
- * The first line of the file contains the number of nodes. Each of the 
+ * Specifies the name of a file to which penalties (Pi-values determined
+ * by the ascent) are to be written. If the file already exists, the
+ * penalties are read from the file, and the ascent is skipped.
+ * The first line of the file contains the number of nodes. Each of the
  * following lines is of the form
  *       <integer> <integer>
- * where the first integer is a node number, and the second integer is 
+ * where the first integer is a node number, and the second integer is
  * the Pi-value associated with the node.
  * The file name "0" represents a file with all Pi-values equal to zero.
  *
@@ -226,99 +271,131 @@
  * Default: 0.
  *
  * PRECISION = <integer>
- * The internal precision in the representation of transformed distances: 
- *    d[i][j] = PRECISION*c[i][j] + pi[i] + pi[j], 
- * where d[i][j], c[i][j], pi[i] and pi[j] are all integral. 
+ * The internal precision in the representation of transformed distances:
+ *    d[i][j] = PRECISION*c[i][j] + pi[i] + pi[j],
+ * where d[i][j], c[i][j], pi[i] and pi[j] are all integral.
  * Default: 100 (which corresponds to 2 decimal places).
- *  
+ *
+ * RECOMBINATION = { IPT | GPX2 }
+ * Default: IPT
+ *
  * RESTRICTED_SEARCH = { YES | NO }
- * Specifies whether the following search pruning technique is used: 
- * The first edge to be broken in a move must not belong to the currently 
- * best solution tour. When no solution tour is known, it must not belong 
- * to the minimum spanning 1-tree.     
- * Default: YES. 
- * 
+ * Specifies whether the following search pruning technique is used:
+ * The first edge to be broken in a move must not belong to the currently
+ * best solution tour. When no solution tour is known, it must not belong
+ * to the minimum spanning 1-tree.
+ * Default: YES.
+ *
  * RUNS = <integer>
- * The total number of runs. 
+ * The total number of runs.
  * Default: 10.
+ *
+ * SALESMEN = <integer>
+ * Specifies the number of salesmen/vehicles.
+ * Default: 1.
+ *
+ * SCALE = <integer>
+ * Scale factor for Euclidean and ATT instances.
+ * Default: 1.
  *
  * SEED = <integer>
  * Specifies the initial seed for random number generation. If zero, the
  * seed is derived from the system clock.
  * Default: 1.
  *
+ * SINTEF_SOLUTION_FILE = <string>
+ * Specifies the name of a file where the solution of an MTSP or VRP instance
+ * is to be written. The solution is written in SINTEF format.
+ * The character $ in the name has a special meaning. All occurrences are
+ * replaced by the cost of the tour.
+ *
+ * SPECIAL
+ * Equivalent to the following parameter specifications:
+ *
+ *    GAIN23 = NO
+ *    KICKS = 1
+ *    KICKTYPE = 4
+ *    MAX_SWAPS = 0
+ *    MOVE_TYPE = 5 SPECIAL
+ *    POPULATION_SIZE = 10
+ *
  * STOP_AT_OPTIMUM = { YES | NO }
- * Specifies whether a run is stopped, if the tour length becomes equal 
+ * Specifies whether a run is stopped, if the tour length becomes equal
  * to OPTIMUM.
  * Default: YES.
- * 
+ *
  * SUBGRADIENT = { YES | NO }
- * Specifies whether the Pi-values should be determined by subgradient 
+ * Specifies whether the Pi-values should be determined by subgradient
  * optimization.
  * Default: YES.
  *
  * SUBPROBLEM_SIZE = <integer> [ DELAUNAY | KARP | K-CENTER | K-MEANS | MOORE |
- *                               ROHE | SIERPINSKI ] [ BORDERS ] [ COMPRESSED ] 
+ *                               ROHE | SIERPINSKI ] [ BORDERS ] [ COMPRESSED ]
  * The number of nodes in a division of the original problem into subproblems.
- * The division is made according to the tour given by SUBPROBLEM_TOUR_FILE. 
- * The value 0 signifies that no division is made. 
- * By default the subproblems are determined by subdividing the tour into 
- * segments of equal size. However, the integer may be followed by DELAUNAY, 
- * KARP, K-CENTER, K-MEANS, MOORE, ROHE or SIERPINSKI. DELAUNAY specifies that 
- * the Delaunay partitioning scheme is used, KARP that Karp's partitioning 
- * scheme is used, K-CENTER that a partitioning scheme based on K-center 
- * clustering, K-MEANS that a partitioning scheme based on K-means clustering 
- * is used, ROHE that Rohe's random rectange partitining scheme is used, and 
- * MOORE or SIERPINSKI that a partitioning scheme based on either a Moore or 
- * Sierpinski space-filling curve is used.
- * The BORDERS specification signifies that the subproblems along the borders 
+ * The division is made according to the tour given by SUBPROBLEM_TOUR_FILE.
+ * The value 0 signifies that no division is made.
+ * By default, the subproblems are determined by subdividing the tour into
+ * segments of equal size. However, the integer may be followed by DELAUNAY,
+ * KARP, K-CENTER, K-MEANS, MOORE, ROHE or SIERPINSKI. DELAUNAY specifies that
+ * the Delaunay partitioning scheme is used, KARP that Karp's partitioning
+ * scheme is used, K-CENTER that a partitioning scheme based on K-center
+ * clustering, K-MEANS that a partitioning scheme based on K-means clustering
+ * is used, ROHE that Rohe's random rectangle/cube partitining scheme is used,
+ * and MOORE or SIERPINSKI that a partitioning scheme based on either a Moore
+ * or Sierpinski space-filling curve is used.
+ * The BORDERS specification signifies that the subproblems along the borders
  * between subproblems are to be solved too.
- * The COMPRESSED specification signifies that each subproblem is compressed by 
- * removing from the problem all nodes with two incident subproblem tour edges 
- * that belong to all tours to be merged (at least two MERGE_TOUR_FILEs should 
+ * The COMPRESSED specification signifies that each subproblem is compressed by
+ * removing from the problem all nodes with two incident subproblem tour edges
+ * that belong to all tours to be merged (at least two MERGE_TOUR_FILEs should
  * be given).
  * Default: 0.
- *  
+ *
  * SUBPROBLEM_TOUR_FILE = <string>
  * Specifies the name of a file containing a tour to be used for dividing
- * the original problem into subproblems. The approximate number of nodes 
- * in each is * given by SUBPROBLEM_SIZE. 
- * The tour is given by a list of integers giving the sequence in which the 
+ * the original problem into subproblems. The approximate number of nodes
+ * in each is * given by SUBPROBLEM_SIZE.
+ * The tour is given by a list of integers giving the sequence in which the
  * nodes are visited in the tour. The tour is terminated by a -1
- *   
- * SUBSEQUENT_MOVE_TYPE = <integer>
- * Specifies the move type to be used for all moves following the first move 
- * in a sequence of moves. The value K >= 2 signifies that a K-opt move is to 
- * be used. The value 0 signifies that all moves are of the same type 
+ *
+ * SUBSEQUENT_MOVE_TYPE = <integer> [ SPECIAL ]
+ * Specifies the move type to be used for all moves following the first move
+ * in a sequence of moves. The value K >= 2 signifies that a K-opt move is to
+ * be used. The value 0 signifies that all moves are of the same type
  * (K = MOVE_TYPE).
+ * The specifier SPECIAL can be given in order to use LKH-3’s specially
+ * designed moves. For this type of moves, k must be 3 or 5.
  * Default: 0.
- * 
+ *
  * SUBSEQUENT_PATCHING = { YES | NO }
- * Specifies whether patching is used for moves following the first move 
+ * Specifies whether patching is used for moves following the first move
  * in a sequence of moves.
  * Default: YES.
  *
  * TIME_LIMIT = <real>
  * Specifies a time limit in seconds for each run.
- * Default: value of DBL_MAX. 
+ * Default: DBL_MAX.
  *
  * TOUR_FILE = <string>
  * Specifies the name of a file where the best tour is to be written.
- * When a run has produced a new best tour, the tour is written to 
- * this file.
- * The character '$' in the name has a special meaning. All occurrences
- * are replaced by the cost of the tour. 
+ * When a run has produced a new best tour, the tour is written to this file.
+ * The character $ in the name has a special meaning. All occurrences
+ * are replaced by the cost of the tour.
  *
  * TRACE_LEVEL = <integer>
- * Specifies the level of detail of the output given during the solution 
- * process. The value 0 signifies a minimum amount of output. The higher 
+ * Specifies the level of detail of the output given during the solution
+ * process. The value 0 signifies a minimum amount of output. The higher
  * the value is the more information is given.
- * Default: 1. 
+ * Default: 1.
  *
+ * VEHICLES = <integer>
+ * Specifies the number of vehicles/salesmen.
+ * Default: 1
+ 
  * List of abbreviations
  * ---------------------
  *
- * A string value may be abbreviated to the first few letters of the string, 
+ * A string value may be abbreviated to the first few letters of the string,
  * if that abbreviation is unambiguous.
  *
  *     Value        Abbreviation
@@ -326,13 +403,15 @@
  *     BORDERS           B
  *     BORUVKA           B
  *     COMPRESSED        C
+ *     CVRP              C
  *     DELAUNAY          D
  *     EXTENDED          E
  *     GREEDY            G
  *     KARP              KA
  *     K-CENTER          K-C
  *     K-MEANS           K-M
- *     MOORE             M
+ *     MOORE             MO
+ *     MTSP              MT
  *     NEAREST-NEIGHBOR  N
  *     NO                N
  *     PURE              P
@@ -340,10 +419,13 @@
  *     QUICK-BORUVKA     Q
  *     RESTRICTED        R
  *     ROHE              R
- *     SIERPINSKI        S
+ *     SIERPINSKI        SI
+ *     SOP               SO
+ *     SPECIAL           S
  *     SYMMETRIC         S
+ *     TSPDL             T
  *     WALK              W
- *     YES               Y    
+ *     YES               Y
  */
 
 static char Delimiters[] = "= \n\t\r\f\v\xef\xbb\xbf";
@@ -363,17 +445,22 @@ void ReadParameters()
     AscentCandidates = 50;
     BackboneTrials = 0;
     Backtracking = 0;
+    BWTSP_B = 0;
+    BWTSP_Q = 0;
+    BWTSP_L = INT_MAX;
     CandidateSetSymmetric = 0;
     CandidateSetType = ALPHA;
     Crossover = ERXT;
     DelaunayPartitioning = 0;
     DelaunayPure = 0;
+    DemandDimension = 1;
     Excess = -1;
     ExtraCandidates = 0;
     ExtraCandidateSetSymmetric = 0;
     ExtraCandidateSetType = QUADRANT;
     Gain23Used = 1;
     GainCriterionUsed = 1;
+    GridSize = 1000000.0;
     InitialPeriod = -1;
     InitialStepSize = 0;
     InitialTourAlgorithm = WALK;
@@ -390,6 +477,11 @@ void ReadParameters()
     MaxTrials = -1;
     MoorePartitioning = 0;
     MoveType = 5;
+    MoveTypeSpecial = 0;
+    MTSPDepot = 1;
+    MTSPMinSize = 1;
+    MTSPMaxSize = -1;
+    MTSPObjective = -1;
     NonsequentialMoveType = -1;
     Optimum = MINUS_INFINITY;
     PatchingA = 1;
@@ -399,9 +491,12 @@ void ReadParameters()
     PatchingCExtended = 0;
     PatchingCRestricted = 0;
     Precision = 100;
+    Recombination = IPT;
     RestrictedSearch = 1;
     RohePartitioning = 0;
     Runs = 0;
+    Salesmen = 1;
+    Scale = -1;
     Seed = 1;
     SierpinskiPartitioning = 0;
     StopAtOptimum = 1;
@@ -410,9 +505,11 @@ void ReadParameters()
     SubproblemsCompressed = 0;
     SubproblemSize = 0;
     SubsequentMoveType = 0;
+    SubsequentMoveTypeSpecial = 0;
     SubsequentPatching = 1;
     TimeLimit = DBL_MAX;
     TraceLevel = 1;
+    TSPTW_Makespan = 0;
 
     if (ParameterFileName) {
         if (!(ParameterFile = fopen(ParameterFileName, "r")))
@@ -457,6 +554,20 @@ void ReadParameters()
         } else if (!strcmp(Keyword, "BACKTRACKING")) {
             if (!ReadYesOrNo(&Backtracking))
                 eprintf("BACKTRACKING: YES or NO expected");
+        } else if (!strcmp(Keyword, "BWTSP")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &BWTSP_B))
+                eprintf("BWTSP: integer expected");
+            if (BWTSP_B <= 0)
+                eprintf("BWTSP: positive integer expected");
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &BWTSP_Q))
+                eprintf("BWTSP: second integer expected");
+            if (BWTSP_Q <= 0)
+                eprintf("BWTSP: positive integer expected");
+            if ((Token = strtok(0, Delimiters)) &&
+                !sscanf(Token, "%d", &BWTSP_L))
+                eprintf("BWTSP: third integer expected");
         } else if (!strcmp(Keyword, "CANDIDATE_FILE")) {
             if (!(Name = GetFileName(0)))
                 eprintf("CANDIDATE_FILE: string expected");
@@ -508,7 +619,13 @@ void ReadParameters()
             }
         } else if (!strcmp(Keyword, "COMMENT"))
             continue;
-        else if (!strcmp(Keyword, "EOF"))
+        else if (!strcmp(Keyword, "DEPOT")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &MTSPDepot))
+                eprintf("DEPOT: integer expected");
+            if (MTSPDepot <= 0)
+                eprintf("DEPOT: positive integer expected");
+        } else if (!strcmp(Keyword, "EOF"))
             break;
         else if (!strcmp(Keyword, "EXCESS")) {
             if (!(Token = strtok(0, Delimiters)) ||
@@ -564,28 +681,38 @@ void ReadParameters()
         } else if (!strcmp(Keyword, "INITIAL_TOUR_ALGORITHM")) {
             if (!(Token = strtok(0, Delimiters)))
                 eprintf("INITIAL_TOUR_ALGORITHM: "
-                        "BORUVKA, GREEDY, MOORE, NEAREST-NEIGHBOR,\n"
-                        "QUICK-BORUVKA, SIERPINSKI, or WALK expected");
+                        "BORUVKA, CVRP, GREEDY, MOORE, MTSP,\n"
+                        "NEAREST-NEIGHBOR, QUICK-BORUVKA, SIERPINSKI, "
+                        "SOP, TSPDL, or WALK expected");
             for (i = 0; i < strlen(Token); i++)
                 Token[i] = (char) toupper(Token[i]);
             if (!strncmp(Token, "BORUVKA", strlen(Token)))
                 InitialTourAlgorithm = BORUVKA;
+            else if (!strncmp(Token, "CVRP", strlen(Token)))
+                InitialTourAlgorithm = CVRP_ALG;
             else if (!strncmp(Token, "GREEDY", strlen(Token)))
                 InitialTourAlgorithm = GREEDY;
-            else if (!strncmp(Token, "MOORE", strlen(Token)))
+            else if (!strncmp(Token, "MOORE", max(strlen(Token), 2)))
                 InitialTourAlgorithm = MOORE;
+            else if (!strncmp(Token, "MTSP", max(strlen(Token), 2)))
+                InitialTourAlgorithm = MTSP_ALG;
             else if (!strncmp(Token, "NEAREST-NEIGHBOR", strlen(Token)))
                 InitialTourAlgorithm = NEAREST_NEIGHBOR;
             else if (!strncmp(Token, "QUICK-BORUVKA", strlen(Token)))
                 InitialTourAlgorithm = QUICK_BORUVKA;
-            else if (!strncmp(Token, "SIERPINSKI", strlen(Token)))
+            else if (!strncmp(Token, "SIERPINSKI", max(strlen(Token), 2)))
                 InitialTourAlgorithm = SIERPINSKI;
+            else if (!strncmp(Token, "SOP", max(strlen(Token), 2)))
+                InitialTourAlgorithm = SOP_ALG;
+            else if (!strncmp(Token, "TSPDL", strlen(Token)))
+                InitialTourAlgorithm = TSPDL_ALG;
             else if (!strncmp(Token, "WALK", strlen(Token)))
                 InitialTourAlgorithm = WALK;
             else
                 eprintf("INITIAL_TOUR_ALGORITHM: "
-                        "BORUVKA, GREEDY, MOORE, NEAREST-NEIGHBOR,\n"
-                        "QUICK-BORUVKA, SIERPINSKI or WALK expected");
+                        "BORUVKA, CVRP, GREEDY, MOORE, MTSP,\n"
+                        "NEAREST-NEIGHBOR, QUICK-BORUVKA, SIERPINSKI, "
+                        "SOP, TSPDL, or WALK expected");
         } else if (!strcmp(Keyword, "INITIAL_TOUR_FILE")) {
             if (!(InitialTourFileName = GetFileName(0)))
                 eprintf("INITIAL_TOUR_FILE: string expected");
@@ -609,7 +736,10 @@ void ReadParameters()
                 !sscanf(Token, "%d", &Kicks))
                 eprintf("KICKS: integer expected");
             if (Kicks < 0)
-                eprintf("KICKS: non-negative integer expected");
+                eprintf("KICKS: non-neEgative integer expected");
+        } else if (!strcmp(Keyword, "MAKESPAN")) {
+            if (!ReadYesOrNo(&TSPTW_Makespan))
+                eprintf("MAKESPAN: YES or NO expected");
         } else if (!strcmp(Keyword, "MAX_BREADTH")) {
             if (!(Token = strtok(0, Delimiters)) ||
                 !sscanf(Token, "%d", &MaxBreadth))
@@ -669,6 +799,48 @@ void ReadParameters()
                 eprintf("MOVE_TYPE: integer expected");
             if (MoveType < 2)
                 eprintf("MOVE_TYPE: >= 2 expected");
+            MoveTypeSpecial = 0;
+            if ((Token = strtok(0, Delimiters))) {
+                for (i = 0; i < strlen(Token); i++)
+                    Token[i] = (char) toupper(Token[i]);
+                if (!strncmp(Token, "SPECIAL", strlen(Token)))
+                    MoveTypeSpecial = 1;
+                else
+                    eprintf("%s", "(MOVE_TYPE) "
+                            "Illegal SPECIAL specification");
+                if (MoveType != 3 && MoveType != 5)
+                    eprintf("%s", "(MOVE_TYPE) "
+                            "SPECIAL, MOVE_TYPE must be 3 or 5");
+            }
+        } else if (!strcmp(Keyword, "MTSP_MAX_SIZE")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &MTSPMaxSize))
+                eprintf("MTSP_MAX_SIZE: integer expected");
+            if (MTSPMaxSize <= 0)
+                eprintf("MTSP_MAX_SIZE: positive integer expected");
+        } else if (!strcmp(Keyword, "MTSP_MIN_SIZE")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &MTSPMinSize))
+                eprintf("MTSP_MIN_SIZE: integer expected");
+        } else if (!strcmp(Keyword, "MTSP_OBJECTIVE")) {
+            if ((Token = strtok(0, Delimiters))) {
+                for (i = 0; i < strlen(Token); i++)
+                    Token[i] = (char) toupper(Token[i]);
+                if (!strcmp(Token, "MINMAX"))
+                    MTSPObjective = MINMAX;
+                else if (!strcmp(Token, "MINMAX_SIZE"))
+                    MTSPObjective = MINMAX_SIZE;
+                else if (!strcmp(Token, "MINSUM"))
+                    MTSPObjective = MINSUM;
+                else
+                    eprintf("MTSP_OBJECTIVE: MINMAX, MINMAX_SIZE, or "
+                            "MINSUM expected");
+            } else
+                eprintf("MTSP_OBJECTIVE: MINMAX, MINMAX_SIZE, or "
+                        "MINSUM expected");
+        } else if (!strcmp(Keyword, "MTSP_SOLUTION_FILE")) {
+            if (!(MTSPSolutionFileName = GetFileName(0)))
+                eprintf("MTSP_SOLUTION_FILE: string expected");
         } else if (!strcmp(Keyword, "NONSEQUENTIAL_MOVE_TYPE")) {
             if (!(Token = strtok(0, Delimiters)) ||
                 !sscanf(Token, "%d", &NonsequentialMoveType))
@@ -730,6 +902,15 @@ void ReadParameters()
         } else if (!strcmp(Keyword, "PROBLEM_FILE")) {
             if (!(ProblemFileName = GetFileName(0)))
                 eprintf("PROBLEM_FILE: string expected");
+        } else if (!strcmp(Keyword, "RECOMBINATION")) {
+            if (!(Token = strtok(0, Delimiters)))
+                eprintf("RECOMBINATION: string expected");
+            if (!strcmp(Token, "IPT"))
+                Recombination = IPT;
+            else if (!strcmp(Token, "GPX2"))
+                Recombination = GPX2;
+            else
+                eprintf("RECOMBINATION: IPT or GPX2 expected");
         } else if (!strcmp(Keyword, "RESTRICTED_SEARCH")) {
             if (!ReadYesOrNo(&RestrictedSearch))
                 eprintf("RESTRICTED_SEARCH: YES or NO expected");
@@ -739,10 +920,31 @@ void ReadParameters()
                 eprintf("RUNS: integer expected");
             if (Runs <= 0)
                 eprintf("RUNS: positive integer expected");
+        } else if (!strcmp(Keyword, "SALESMEN") ||
+                   !strcmp(Keyword, "VEHICLES")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &Salesmen))
+                eprintf("%s: integer expected", Keyword);
+            if (Salesmen <= 0)
+                eprintf("%s: positive integer expected", Keyword);
+        } else if (!strcmp(Keyword, "SCALE")) {
+            if (!(Token = strtok(0, Delimiters)) ||
+                !sscanf(Token, "%d", &Scale))
+                eprintf("SCALE: integer expected");
         } else if (!strcmp(Keyword, "SEED")) {
             if (!(Token = strtok(0, Delimiters)) ||
                 !sscanf(Token, "%u", &Seed))
                 eprintf("SEED: integer expected");
+        } else if (!strcmp(Keyword, "SPECIAL")) {
+            Gain23Used = 0;
+            KickType = 4;
+            MaxSwaps = 0;
+            MoveType = 5;
+            MoveTypeSpecial = 1;
+            MaxPopulationSize = 10;
+        } else if (!strcmp(Keyword, "SINTEF_SOLUTION_FILE")) {
+            if (!(SINTEFSolutionFileName = GetFileName(0)))
+                eprintf("SINTEF_SOLUTION_FILE: string expected");
         } else if (!strcmp(Keyword, "STOP_AT_OPTIMUM")) {
             if (!ReadYesOrNo(&StopAtOptimum))
                 eprintf("STOP_AT_OPTIMUM: YES or NO expected");
@@ -765,7 +967,8 @@ void ReadParameters()
                     DelaunayPartitioning = 1;
                 else if (!strncmp(Token, "KARP", max(strlen(Token), 2)))
                     KarpPartitioning = 1;
-                else if (!strncmp(Token, "K-CENTER", max(strlen(Token), 3)))
+                else if (!strncmp
+                         (Token, "K-CENTER", max(strlen(Token), 3)))
                     KCenterPartitioning = 1;
                 else if (!strncmp(Token, "K-MEANS", max(strlen(Token), 3)))
                     KMeansPartitioning = 1;
@@ -803,6 +1006,19 @@ void ReadParameters()
                 eprintf("SUBSEQUENT_MOVE_TYPE: integer expected");
             if (SubsequentMoveType != 0 && SubsequentMoveType < 2)
                 eprintf("SUBSEQUENT_MOVE_TYPE: 0 or >= 2 expected");
+            SubsequentMoveTypeSpecial = 0;
+            if ((Token = strtok(0, Delimiters))) {
+                for (i = 0; i < strlen(Token); i++)
+                    Token[i] = (char) toupper(Token[i]);
+                if (!strncmp(Token, "SPECIAL", strlen(Token)))
+                    SubsequentMoveTypeSpecial = 1;
+                else
+                    eprintf("%s", "(SUBSEQUENT_MOVE_TYPE) "
+                            "Illegal SPECIAL specification");
+                if (SubsequentMoveType != 3 && SubsequentMoveType != 5)
+                    eprintf("%s", "(SUBSEQUENT_MOVE_TYPE) "
+                            "SPECIAL, SUBSEQUENT_MOVE_TYPE must be 3 or 5");
+            }
         } else if (!strcmp(Keyword, "SUBSEQUENT_PATCHING")) {
             if (!ReadYesOrNo(&SubsequentPatching))
                 eprintf("SUBSEQUENT_PATCHING: YES or NO expected");
@@ -830,6 +1046,8 @@ void ReadParameters()
         eprintf("SUBPROBLEM_SIZE specification is missing");
     if (SubproblemSize > 0 && SubproblemTourFileName == 0)
         eprintf("SUBPROBLEM_TOUR_FILE specification is missing");
+    MergeWithTour = Recombination == IPT ? MergeWithTourIPT :
+        MergeWithTourGPX2;
     fclose(ParameterFile);
     free(LastLine);
     LastLine = 0;
@@ -842,7 +1060,8 @@ static char *GetFileName(char *Line)
     if (!Rest)
         return 0;
     while (isspace(*Rest))
-        Rest++;
+        while (isspace(*Rest))
+            Rest++;
     if (!Line) {
         if (*Rest == '=')
             Rest++;

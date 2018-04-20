@@ -1,5 +1,6 @@
 #include "Segment.h"
 #include "LKH.h"
+#include "BIT.h"
 
 /* 
  * The StoreTour function is called each time the tour has been improved by 
@@ -40,4 +41,5 @@ void StoreTour()
                     t->Cost = Nt->Cost;
         }
     }
+    BIT_Update();
 }

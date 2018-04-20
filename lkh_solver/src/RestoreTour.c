@@ -13,7 +13,7 @@ void RestoreTour()
     Node *t1, *t2, *t3, *t4;
 
     /* Loop as long as the stack is not empty */
-    while (Swaps > 0) {
+    while (Swaps > OldSwaps) {
         /* Undo topmost 2-opt move */
         Swaps--;
         t1 = SwapStack[Swaps].t1;

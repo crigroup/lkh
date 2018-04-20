@@ -22,8 +22,8 @@
 
 void MinimumSpanningTree(int Sparse)
 {
-    Node *Blue;         /* Points to the last node included in the tree */
-    Node *NextBlue = 0; /* Points to the provisional next node to be included */
+    Node *Blue;                 /* Points to the last node included in the tree */
+    Node *NextBlue = 0;         /* Points to the provisional next node to be included */
     Node *N;
     Candidate *NBlue;
     int d;
@@ -66,8 +66,8 @@ void MinimumSpanningTree(int Sparse)
                     N->Rank = INT_MIN;
                     HeapSiftUp(N);
                 } else if (!Blue->FixedTo2 && !N->FixedTo2 &&
-                           (d = NBlue->Cost + Blue->Pi + N->Pi) < N->Cost)
-                {
+                           (d =
+                            NBlue->Cost + Blue->Pi + N->Pi) < N->Cost) {
                     N->Dad = Blue;
                     N->Cost = N->Rank = d;
                     HeapSiftUp(N);

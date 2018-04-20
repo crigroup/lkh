@@ -2,8 +2,7 @@
 
 /*
  * The AddExtraCandidates function extends the candidate set with the
- * K extra neighbors from a given canddate set type (QUADRANT, NN, 
- * or REINELT).
+ * K extra neighbors from a given canddate set type (QUADRANT or NN).
  *
  * A non-zero value of of the parameter Symmetric specifies that the 
  * candidate set is to be complemented such that every candidate edge 
@@ -26,9 +25,13 @@ void AddExtraCandidates(int K, int CandidateSetType, int Symmetric)
         SavedCandidateSet[t->Id] = t->CandidateSet;
         t->CandidateSet = 0;
     } while ((t = t->Suc) != FirstNode);
-    if (CandidateSetType == NN)
-        CreateNearestNeighborCandidateSet(K);
-    else if (CandidateSetType == QUADRANT)
+    if (CandidateSetType == NN) {
+        if ((CoordType == TWOD_COORDS && Distance != Distance_TOR_2D) ||
+            (CoordType == THREED_COORDS && Distance != Distance_TOR_3D))
+            CreateNearestNeighborCandidateSet(K);
+        else
+            CreateNNCandidateSet(K);
+    } else if (CandidateSetType == QUADRANT)
         CreateQuadrantCandidateSet(K);
     t = FirstNode;
     do {

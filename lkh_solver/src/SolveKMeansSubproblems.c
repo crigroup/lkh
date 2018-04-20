@@ -75,18 +75,20 @@ void SolveKMeansSubproblems()
  *     Dan Judd, Philip K. McKinley, Anil K. Jain: 
  *     Large-Scale Parallel Data Clustering. 
  *     IEEE Transactions on Pattern Analysis and 
- *     Machine Intelligence 20(8): 871-876 (1998)   
+ *     Machine Intelligence 20(8):871-876 (1998)   
  */
 
 static void KMeansClustering(int K)
 {
-    Node *Center, **Perm, *N, Old;
+    Node *Center, **CenterRef, **Perm, *N, Old;
     int *Count, i, j, d, OldSubproblem;
     double *SumXc, *SumYc, *SumZc, Xc, Yc, Zc;
     int *Movement, *MMax, Max;
     int Moving = 0;
+    CostFunction OldDistance = Distance;
 
     assert(Center = (Node *) calloc((K + 1), sizeof(Node)));
+    assert(CenterRef = (Node **) calloc((K + 1), sizeof(Node *)));
     assert(SumXc = (double *) calloc(K + 1, sizeof(double)));
     assert(SumYc = (double *) calloc(K + 1, sizeof(double)));
     assert(SumZc = (double *) calloc(K + 1, sizeof(double)));
@@ -144,7 +146,10 @@ static void KMeansClustering(int K)
         Center[0].Y = Yc;
         Center[0].Z = Zc;
     }
-
+    if (Distance == Distance_TOR_2D)
+        Distance = Distance_EUC_2D;
+    else if (Distance == Distance_TOR_3D)
+        Distance = Distance_EUC_3D;
     for (;;) {
         /* Assign each node to its closest center */
         Moving = 0;
@@ -246,12 +251,16 @@ static void KMeansClustering(int K)
             }
         }
     }
-
+    Distance = OldDistance;
     N = FirstNode;
     do
         N->Pi = N->BestPi;
     while ((N = N->Suc) != FirstNode);
+    for (i = 1; i <= K; i++)
+        CenterRef[i] = &Center[i];
+    AdjustClusters(K, CenterRef);
     free(Center);
+    free(CenterRef);
     free(SumXc);
     free(SumYc);
     free(SumZc);

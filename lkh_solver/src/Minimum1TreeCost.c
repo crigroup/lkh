@@ -39,13 +39,14 @@ GainType Minimum1TreeCost(int Sparse)
     do {
         if (N->V == -1) {
             Connect(N, Max, Sparse);
-            if (N->NextCost > Max) {
+            if (N->NextCost > Max && N->Next) {
                 N1 = N;
                 Max = N->NextCost;
             }
         }
     }
     while ((N = N->Suc) != FirstNode);
+    assert(N1);
     N1->Next->V++;
     N1->V++;
     Sum += N1->NextCost;
@@ -63,8 +64,10 @@ GainType Minimum1TreeCost(int Sparse)
     if (Norm == 0) {
         for (N = FirstNode->Dad; N; N1 = N, N = N->Dad)
             Follow(N, N1);
-        for (N = FirstNode->Suc; N != FirstNode; N = N->Suc)
+        for (N = FirstNode->Suc; N != FirstNode; N = N->Suc) {
             N->Dad = N->Pred;
+            N->Cost = D(N, N->Dad);
+        }
         FirstNode->Suc->Dad = 0;
     }
     return Sum;

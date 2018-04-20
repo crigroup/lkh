@@ -30,6 +30,8 @@ static GainType BestKOptMoveRec(int k, GainType G0);
 
 Node *BestKOptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
 {
+    OldSwaps = Swaps;
+    PenaltyGain = 0;
     K = Swaps == 0 ? MoveType : SubsequentMoveType;
     *Gain = 0;
     t[1] = t1;
@@ -55,7 +57,7 @@ Node *BestKOptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
     *Gain = BestKOptMoveRec(2, *G0);
     UnmarkDeleted(t1, t2);
 
-    if (*Gain <= 0 && T[2 * K]) {
+    if (PenaltyGain <= 0 && *Gain <= 0 && T[2 * K]) {
         int i;
         memcpy(t + 1, T + 1, 2 * K * sizeof(Node *));
         for (i = 2; i < 2 * K; i += 2)
@@ -73,7 +75,7 @@ Node *BestKOptMove(Node * t1, Node * t2, GainType * G0, GainType * Gain)
 static GainType BestKOptMoveRec(int k, GainType G0)
 {
     Candidate *Nt2;
-    Node *t1, *t2, *t3, *t4;
+    Node *t1, *t2, *t3, *t4, *SUCt1;
     GainType G1, G2, G3, Gain;
     int X4, i;
     int Breadth2 = 0;
@@ -82,11 +84,14 @@ static GainType BestKOptMoveRec(int k, GainType G0)
     t2 = t[i = 2 * k - 2];
     incl[incl[i] = i + 1] = i;
     incl[incl[1] = i + 2] = 1;
+    SUCt1 = SUC(t1);
     /* Choose (t2,t3) as a candidate edge emanating from t2 */
     for (Nt2 = t2->CandidateSet; (t3 = Nt2->To); Nt2++) {
         if (t3 == t2->Pred || t3 == t2->Suc ||
-            ((G1 = G0 - Nt2->Cost) <= 0 && GainCriterionUsed &&
-             ProblemType != HCP && ProblemType != HPP)
+            ((G1 = G0 - Nt2->Cost) <= 0 &&
+             GainCriterionUsed && (k > 2 ||
+                                   (ProblemType != HCP
+                                    && ProblemType != HPP)))
             || Added(t2, t3))
             continue;
         if (++Breadth2 > MaxBreadth)
@@ -103,18 +108,26 @@ static GainType BestKOptMoveRec(int k, GainType G0)
             G2 = G1 + C(t3, t4);
             G3 = MINUS_INFINITY;
             if (t4 != t1 && !Forbidden(t4, t1) && !Added(t4, t1) &&
-                (!c || G2 - c(t4, t1) > 0) &&
-                (G3 = G2 - C(t4, t1)) > 0 && FeasibleKOptMove(k)) {
-                UnmarkAdded(t2, t3);
-                MakeKOptMove(k);
-                return G3;
+                (CurrentPenalty > 0 || TSPTW_Makespan ||
+                 ((!c || G2 - c(t4, t1) > 0) &&
+                  (G3 = G2 - C(t4, t1)) > 0)) && FeasibleKOptMove(k)) {
+                if (CurrentPenalty > 0 || TSPTW_Makespan)
+                    G3 = G2 - C(t4, t1);
+                if (CurrentPenalty || TSPTW_Makespan || G3 > 0) {
+                    MakeKOptMove(k);
+                    if (Improvement(&G3, t1, SUCt1)) {
+                        UnmarkAdded(t2, t3);
+                        return G3;
+                    }
+                }
             }
             if (Backtracking && !Excludable(t3, t4))
                 continue;
             MarkDeleted(t3, t4);
             G[2 * k - 1] = G2 - t4->Pi;
             if (k < K) {
-                if ((Gain = BestKOptMoveRec(k + 1, G2)) > 0) {
+                Gain = BestKOptMoveRec(k + 1, G2);
+                if (PenaltyGain > 0 || Gain > 0) {
                     UnmarkAdded(t2, t3);
                     UnmarkDeleted(t3, t4);
                     return Gain;
@@ -129,11 +142,13 @@ static GainType BestKOptMoveRec(int k, GainType G0)
                     G3 = G2 - C(t4, t1);
                 if ((PatchingCRestricted ? G3 > 0 && IsCandidate(t4, t1) :
                      PatchingCExtended ? G3 > 0
-                     || IsCandidate(t4, t1) : G3 > 0)
-                    && (Gain = PatchCycles(k, G3)) > 0) {
-                    UnmarkAdded(t2, t3);
-                    UnmarkDeleted(t3, t4);
-                    return Gain;
+                     || IsCandidate(t4, t1) : G3 > 0)) {
+                    Gain = PatchCycles(k, G3);
+                    if (PenaltyGain > 0 || Gain > 0) {
+                        UnmarkAdded(t2, t3);
+                        UnmarkDeleted(t3, t4);
+                        return Gain;
+                    }
                 }
             }
             UnmarkDeleted(t3, t4);
@@ -173,10 +188,11 @@ static GainType BestKOptMoveRec(int k, GainType G0)
                         UnmarkAdded(t[i], t[i + 1]);
                     memcpy(tSaved + 1, t + 1, 2 * k * sizeof(Node *));
                     while ((t4 = BestSubsequentMove(t1, t4, &G2, &Gain)));
-                    if (Gain > 0) {
+                    if (PenaltyGain > 0 || Gain > 0) {
                         UnmarkAdded(t2, t3);
                         return Gain;
                     }
+                    OldSwaps = 0;
                     RestoreTour();
                     K = k;
                     memcpy(t + 1, tSaved + 1, 2 * K * sizeof(Node *));
@@ -200,8 +216,8 @@ static GainType BestKOptMoveRec(int k, GainType G0)
         for (i = 2 * k - 4; i >= 2; i--) {
             if (t3 == t[i]) {
                 t4 = t[i ^ 1];
-                if (t4 == t1 || Forbidden(t4, t1) || FixedOrCommon(t3, t4) ||
-                    Added(t4, t1))
+                if (t4 == t1 || Forbidden(t4, t1) || FixedOrCommon(t3, t4)
+                    || Added(t4, t1))
                     continue;
                 G2 = G1 + C(t3, t4);
                 if ((!c || G2 - c(t4, t1) > 0)
@@ -209,8 +225,10 @@ static GainType BestKOptMoveRec(int k, GainType G0)
                     incl[incl[i ^ 1] = 1] = i ^ 1;
                     incl[incl[i] = 2 * k - 2] = i;
                     if (FeasibleKOptMove(k - 1)) {
+                        Gain = G1 + C(t3, t4) - C(t4, t1);
                         MakeKOptMove(k - 1);
-                        return Gain;
+                        if (Improvement(&Gain, t1, SUCt1))
+                            return Gain;
                     }
                     incl[incl[i ^ 1] = i] = i ^ 1;
                 }

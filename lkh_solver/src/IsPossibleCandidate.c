@@ -12,6 +12,8 @@ int IsPossibleCandidate(Node * From, Node * To)
 {
     Node *Na, *Nb, *Nc, *N;
 
+    if (Forbidden(From, To))
+        return 0;
     if (InInitialTour(From, To) ||
         From->SubproblemSuc == To || To->SubproblemSuc == From ||
         FixedOrCommon(From, To))
@@ -21,11 +23,14 @@ int IsPossibleCandidate(Node * From, Node * To)
     if (MergeTourFiles < 2)
         return 1;
     if (!From->Head) {
-        Nb = FirstNode;
-        do {
+        Na = FirstNode;
+        do
+            Na->Head = Na->Tail = Na;
+        while ((Na = Na->Suc) != FirstNode);
+        Na = FirstNode;
+        while ((Nb = Na->MergeSuc[0]) != FirstNode
+               && FixedOrCommon(Na, Nb))
             Na = Nb;
-            Nb = Na->MergeSuc[0];
-        } while (Nb != FirstNode && FixedOrCommon(Na, Nb));
         if (Nb != FirstNode) {
             N = Nb;
             do {
@@ -38,7 +43,7 @@ int IsPossibleCandidate(Node * From, Node * To)
                 do
                     Nc->Tail = Na;
                 while ((Nc = Nc->MergeSuc[0]) != Nb);
-            } while (Nb != N);
+            } while (Nc != N);
         } else {
             do
                 Nb->Head = Nb->Tail = FirstNode;

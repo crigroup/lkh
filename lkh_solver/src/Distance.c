@@ -5,10 +5,25 @@
  *
  * The appropriate function is referenced by the function pointer Distance.
  */
-
 int Distance_1(Node * Na, Node * Nb)
 {
     return 1;
+}
+
+int Distance_LARGE(Node * Na, Node * Nb)
+{
+    return 10000000;
+}
+
+int Distance_Asymmetric(Node * Na, Node * Nb)
+{
+    int n = DimensionSaved;
+    if ((Na->Id <= n) == (Nb->Id <= n))
+        return M;
+    if (abs(Na->Id - Nb->Id) == n)
+        return 0;
+    return Na->Id <= n ? OldDistance(Na, Nb - n) :
+                         OldDistance(Nb, Na - n);
 }
 
 int Distance_ATSP(Node * Na, Node * Nb)
@@ -24,36 +39,48 @@ int Distance_ATSP(Node * Na, Node * Nb)
 int Distance_ATT(Node * Na, Node * Nb)
 {
     double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y;
-    return (int) ceil(sqrt((xd * xd + yd * yd) / 10.0));
+    return (int) ceil(Scale * (sqrt((xd * xd + yd * yd) / 10.0)));
 }
 
 int Distance_CEIL_2D(Node * Na, Node * Nb)
 {
     double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y;
-    return (int) ceil(sqrt(xd * xd + yd * yd));
+    return (int) ceil(Scale * sqrt(xd * xd + yd * yd));
 }
 
 int Distance_CEIL_3D(Node * Na, Node * Nb)
 {
     double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y, zd = Na->Z - Nb->Z;
-    return (int) ceil(sqrt(xd * xd + yd * yd + zd * zd));
+    return (int) ceil(Scale * sqrt(xd * xd + yd * yd + zd * zd));
 }
 
 int Distance_EUC_2D(Node * Na, Node * Nb)
 {
     double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y;
-    return (int) (sqrt(xd * xd + yd * yd) + 0.5);
+    return (int) (Scale * sqrt(xd * xd + yd * yd) + 0.5);
 }
 
 int Distance_EUC_3D(Node * Na, Node * Nb)
 {
     double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y, zd = Na->Z - Nb->Z;
-    return (int) (sqrt(xd * xd + yd * yd + zd * zd) + 0.5);
+    return (int) (Scale * sqrt(xd * xd + yd * yd + zd * zd) + 0.5);
 }
 
 int Distance_EXPLICIT(Node * Na, Node * Nb)
 {
     return Na->Id < Nb->Id ? Nb->C[Na->Id] : Na->C[Nb->Id];
+}
+
+int Distance_FLOOR_2D(Node * Na, Node * Nb)
+{
+    double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y;
+    return (int) floor(Scale * sqrt(xd * xd + yd * yd));
+}
+
+int Distance_FLOOR_3D(Node * Na, Node * Nb)
+{
+    double xd = Na->X - Nb->X, yd = Na->Y - Nb->Y, zd = Na->Z - Nb->Z;
+    return (int) floor(Scale * sqrt(xd * xd + yd * yd + zd * zd));
 }
 
 #define PI 3.141592
@@ -103,27 +130,29 @@ int Distance_GEOM(Node * Na, Node * Nb)
 
 int Distance_MAN_2D(Node * Na, Node * Nb)
 {
-    return (int) (fabs(Na->X - Nb->X) + fabs(Na->Y - Nb->Y) + 0.5);
+    return (int) (Scale * (fabs(Na->X - Nb->X) + fabs(Na->Y - Nb->Y)) +
+                  0.5);
 }
 
 int Distance_MAN_3D(Node * Na, Node * Nb)
 {
-    return (int) (fabs(Na->X - Nb->X) +
-                  fabs(Na->Y - Nb->Y) + fabs(Na->Z - Nb->Z) + 0.5);
+    return (int) (Scale * (fabs(Na->X - Nb->X) +
+                           fabs(Na->Y - Nb->Y) + fabs(Na->Z - Nb->Z)) +
+                  0.5);
 }
 
 int Distance_MAX_2D(Node * Na, Node * Nb)
 {
-    int dx = (int) (fabs(Na->X - Nb->X) + 0.5),
-        dy = (int) (fabs(Na->Y - Nb->Y) + 0.5);
+    int dx = (int) (Scale * fabs(Na->X - Nb->X) + 0.5),
+        dy = (int) (Scale * fabs(Na->Y - Nb->Y) + 0.5);
     return dx > dy ? dx : dy;
 }
 
 int Distance_MAX_3D(Node * Na, Node * Nb)
 {
-    int dx = (int) (fabs(Na->X - Nb->X) + 0.5),
-        dy = (int) (fabs(Na->Y - Nb->Y) + 0.5),
-        dz = (int) (fabs(Na->Z - Nb->Z) + 0.5);
+    int dx = (int) (Scale * fabs(Na->X - Nb->X) + 0.5),
+        dy = (int) (Scale * fabs(Na->Y - Nb->Y) + 0.5),
+        dz = (int) (Scale * fabs(Na->Z - Nb->Z) + 0.5);
     if (dy > dx)
         dx = dy;
     return dx > dz ? dx : dz;
@@ -198,18 +227,40 @@ static double max(double a, double b)
     return a > b ? a : b;
 }
 
-int Distance_XRAY1(Node *Na, Node *Nb)
+int Distance_TOR_2D(Node * Na, Node * Nb)
 {
-    double distp = min(fabs(Na->X - Nb->X), fabs(fabs(Na->X - Nb->X) - 360));
+    double dx = fabs(Na->X - Nb->X);
+    double dy = fabs(Na->Y - Nb->Y);
+    dx = min(dx, GridSize - dx);
+    dy = min(dy, GridSize - dy);
+    return (int) (Scale * sqrt(dx * dx + dy * dy) + 0.5);
+}
+
+int Distance_TOR_3D(Node * Na, Node * Nb)
+{
+    double dx = fabs(Na->X - Nb->X);
+    double dy = fabs(Na->Y - Nb->Y);
+    double dz = fabs(Na->Z - Nb->Z);
+    dx = min(dx, GridSize - dx);
+    dy = min(dy, GridSize - dy);
+    dz = min(dz, GridSize - dz);
+    return (int) (Scale * sqrt(dx * dx + dy * dy + dz * dz) + 0.5);
+}
+
+int Distance_XRAY1(Node * Na, Node * Nb)
+{
+    double distp =
+        min(fabs(Na->X - Nb->X), fabs(fabs(Na->X - Nb->X) - 360));
     double distc = fabs(Na->Y - Nb->Y);
     double distt = fabs(Na->Z - Nb->Z);
     double cost = max(distp, max(distc, distt));
     return (int) (100 * cost + 0.5);
 }
 
-int Distance_XRAY2(Node *Na, Node *Nb)
+int Distance_XRAY2(Node * Na, Node * Nb)
 {
-    double distp = min(fabs(Na->X - Nb->X), fabs(fabs(Na->X - Nb->X) - 360));
+    double distp =
+        min(fabs(Na->X - Nb->X), fabs(fabs(Na->X - Nb->X) - 360));
     double distc = fabs(Na->Y - Nb->Y);
     double distt = fabs(Na->Z - Nb->Z);
     double cost = max(distp / 1.25, max(distc / 1.5, distt / 1.15));

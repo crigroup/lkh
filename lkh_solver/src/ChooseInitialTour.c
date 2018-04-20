@@ -29,8 +29,6 @@
  *  The sequence of chosen nodes constitutes the initial tour.
  */
 
-static int FixedOrCommonCandidates(Node * N);
-
 void ChooseInitialTour()
 {
     Node *N, *NextN, *FirstAlternative, *Last;
@@ -46,14 +44,26 @@ void ChooseInitialTour()
     }
     if (Trial == 1 && (!FirstNode->InitialSuc || InitialTourFraction < 1)) {
         if (InitialTourAlgorithm == BORUVKA ||
+            InitialTourAlgorithm == CVRP_ALG ||
             InitialTourAlgorithm == GREEDY ||
             InitialTourAlgorithm == MOORE ||
+            InitialTourAlgorithm == MTSP_ALG ||
             InitialTourAlgorithm == NEAREST_NEIGHBOR ||
             InitialTourAlgorithm == QUICK_BORUVKA ||
-            InitialTourAlgorithm == SIERPINSKI) {
+            InitialTourAlgorithm == SIERPINSKI ||
+            InitialTourAlgorithm == SOP_ALG ||
+            InitialTourAlgorithm == TSPDL_ALG) {
             GainType Cost = InitialTourAlgorithm == MOORE ||
                 InitialTourAlgorithm == SIERPINSKI ?
-                SFCTour(InitialTourAlgorithm) : GreedyTour();
+                SFCTour(InitialTourAlgorithm) :
+                InitialTourAlgorithm == CVRP_ALG ?
+                CVRP_InitialTour() :
+                InitialTourAlgorithm == MTSP_ALG ?
+                MTSP_InitialTour() :
+                InitialTourAlgorithm == SOP_ALG ?
+                SOP_InitialTour() : 
+                InitialTourAlgorithm == TSPDL_ALG ?
+                TSPDL_InitialTour() : GreedyTour();
             if (MaxTrials == 0) {
                 BetterCost = Cost;
                 RecordBetterTour();
@@ -61,9 +71,15 @@ void ChooseInitialTour()
             if (!FirstNode->InitialSuc)
                 return;
         }
+    } else if (InitialTourAlgorithm == SOP_ALG &&
+               Trial > 1 &&
+               (ProblemType == SOP || ProblemType == M1_PDTSP) &&
+               (Kicks == 0 || KickType == 0)) {
+        SOP_InitialTour();
+        return;
     }
 
-Start:
+  Start:
     /* Mark all nodes as "not chosen" by setting their V field to zero */
     N = FirstNode;
     do
@@ -77,6 +93,8 @@ Start:
             break;
     }
     while ((N = N->Suc) != FirstNode);
+    if (ProblemType == ATSP && N->Id <= DimensionSaved)
+        N += DimensionSaved;
     FirstNode = N;
 
     /* Move nodes with two incident fixed or common candidate edges in 
@@ -99,10 +117,19 @@ Start:
 
         /* Case A */
         for (NN = N->CandidateSet; (NextN = NN->To); NN++) {
-            if (!NextN->V && FixedOrCommon(N, NextN)) {
+            if (!NextN->V && Fixed(N, NextN)) {
                 Alternatives++;
                 NextN->Next = FirstAlternative;
                 FirstAlternative = NextN;
+            }
+        }
+        if (Alternatives == 0 && MergeTourFiles > 1) {
+            for (NN = N->CandidateSet; (NextN = NN->To); NN++) {
+                if (!NextN->V && IsCommonEdge(N, NextN)) {
+                    Alternatives++;
+                    NextN->Next = FirstAlternative;
+                    FirstAlternative = NextN;
+                }
             }
         }
         if (Alternatives == 0 && FirstNode->InitialSuc && Trial == 1 &&
@@ -142,7 +169,8 @@ Start:
         if (Alternatives == 0) {
             /* Case E (actually not really a random choice) */
             NextN = N->Suc;
-            while ((FixedOrCommonCandidates(NextN) == 2 || Forbidden(N, NextN))
+            while ((FixedOrCommonCandidates(NextN) == 2
+                    || Forbidden(N, NextN))
                    && NextN->Suc != FirstNode)
                 NextN = NextN->Suc;
             if (FixedOrCommonCandidates(NextN) == 2 || Forbidden(N, NextN)) {
@@ -179,24 +207,4 @@ Start:
             RecordBetterTour();
         }
     }
-}
-
-/* 
- * The FixedOrCommonCandidates function returns the number of fixed or
- * common candidate edges emanating from a given node, N.
- */
-
-static int FixedOrCommonCandidates(Node * N)
-{
-    int Count = 0;
-    Candidate *NN;
-
-    if (N->FixedTo2)
-        return 2;
-    if (!N->FixedTo1 && MergeTourFiles < 2)
-        return 0;
-    for (NN = N->CandidateSet; NN->To; NN++)
-        if (FixedOrCommon(N, NN->To))
-            Count++;
-    return Count;
 }

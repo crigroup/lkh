@@ -24,7 +24,7 @@ int ReadPenalties()
 
     if (PiFileName == 0)
         return 0;
-    if (PenaltiesRead || strcmp(PiFileName, "0") == 0)
+    if (PenaltiesRead || !strcmp(PiFileName, "0"))
         return PenaltiesRead = 1;
     if (!(PiFile = fopen(PiFileName, "r")))
         return 0;

@@ -27,7 +27,7 @@ typedef struct edge edge;
 typedef double real;
 
 struct point {
-    real x, y;
+    double x, y;
     int id;
     edge *entry_pt;
 };

@@ -35,7 +35,7 @@ void CreateCandidateSet()
         (MaxTrials == 0 &&
          (FirstNode->InitialSuc || InitialTourAlgorithm == SIERPINSKI ||
           InitialTourAlgorithm == MOORE))) {
-        ReadCandidates(MaxCandidates);
+        CandidatesRead = ReadCandidates(MaxCandidates);
         AddTourCandidates();
         if (ProblemType == HCP || ProblemType == HPP)
             Ascent();
@@ -50,13 +50,19 @@ void CreateCandidateSet()
             MaxCandidates > 0) {
             if (CandidateSetType == QUADRANT)
                 CreateQuadrantCandidateSet(MaxCandidates);
-            else if (CandidateSetType == NN)
-                CreateNearestNeighborCandidateSet(MaxCandidates);
-        } else {
-            AddTourCandidates();
-            if (CandidateSetSymmetric)
-                SymmetrizeCandidateSet();
+            else if (CandidateSetType == NN) {
+                if ((CoordType == TWOD_COORDS
+                     && Distance != Distance_TOR_2D)
+                    || (CoordType == THREED_COORDS
+                        && Distance != Distance_TOR_3D))
+                    CreateNearestNeighborCandidateSet(MaxCandidates);
+                else
+                    CreateNNCandidateSet(MaxCandidates);
+            }
         }
+        AddTourCandidates();
+        if (CandidateSetSymmetric)
+            SymmetrizeCandidateSet();
         goto End_CreateCandidateSet;
     }
     if (!ReadPenalties()) {
@@ -108,7 +114,9 @@ void CreateCandidateSet()
     LowerBound = (double) Cost / Precision;
     if (TraceLevel >= 1) {
         printff("Lower bound = %0.1f", LowerBound);
-        if (Optimum != MINUS_INFINITY && Optimum != 0)
+        if (Optimum != MINUS_INFINITY && Optimum != 0 &&
+            ProblemType != CCVRP && ProblemType != TRP &&
+            MTSPObjective != MINMAX && MTSPObjective != MINMAX_SIZE)
             printff(", Gap = %0.2f%%",
                     100.0 * (Optimum - LowerBound) / Optimum);
         if (!PiFile)
@@ -117,7 +125,9 @@ void CreateCandidateSet()
         printff("\n");
     }
     MaxAlpha = (GainType) fabs(Excess * Cost);
-    if ((A = Optimum * Precision - Cost) > 0 && A < MaxAlpha)
+    if (ProblemType != CCVRP && ProblemType != TRP &&
+        MTSPObjective != MINMAX && MTSPObjective != MINMAX_SIZE &&
+        (A = Optimum * Precision - Cost) > 0 && A < MaxAlpha)
         MaxAlpha = A;
     if (CandidateSetType == DELAUNAY || MaxCandidates == 0)
         OrderCandidateSet(MaxCandidates, MaxAlpha, CandidateSetSymmetric);
@@ -136,7 +146,7 @@ void CreateCandidateSet()
     do {
         if (!Na->CandidateSet || !Na->CandidateSet[0].To) {
             if (MaxCandidates == 0)
-                eprintf("MAX_CANDIDATES = 0: Node %d has no candidates", 
+                eprintf("MAX_CANDIDATES = 0: Node %d has no candidates",
                         Na->Id);
             else
                 eprintf("Node %d has no candidates", Na->Id);

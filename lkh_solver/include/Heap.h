@@ -7,8 +7,9 @@
 
 #include "LKH.h"
 
-void MakeHeap(int Size);
+void HeapMake(int Size);
 void HeapInsert(Node * N);
+void HeapClear(void);
 void HeapDelete(Node * N);
 Node *HeapDeleteMin(void);
 void HeapLazyInsert(Node * N);

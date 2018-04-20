@@ -109,45 +109,62 @@ BridgeGain(Node * s1, Node * s2, Node * s3, Node * s4,
                     continue;
                 G2 = G1 + C(t3, t4);
                 /* Test if an improvement can be obtained */
-                if (!Forbidden(t4, t1) && (!c || G2 - c(t4, t1) > 0)
-                    && (Gain = G2 - C(t4, t1)) > 0) {
-                    switch (Case6) {
-                    case 0:
-                        if (X4 == 1)
-                            Swap3(s1, s2, s4, t3, t4, t1, s1, s3, s2);
-                        else
-                            Swap2(t1, t2, t3, s1, s2, s3);
-                        return Gain;
-                    case 3:
-                        if ((X4 == 1) ==
-                            (!BETWEEN(s2, t1, s6) && !BETWEEN(s2, t3, s6)))
-                            Swap3(s1, s2, s3, t1, t2, t3, s5, s6, s1);
-                        else
-                            Swap4(s1, s2, s3, t1, t2, t4, s5, s6, s1, t2,
-                                  t4, t1);
-                        if (s8)
-                            Swap1(s7, s8, s1);
-                        return Gain;
-                    case 4:
-                        if ((X4 == 1) ==
-                            (!BETWEEN(s3, t1, s5) && !BETWEEN(s3, t3, s5)))
-                            Swap3(s1, s2, s3, t1, t2, t3, s5, s6, s1);
-                        else
-                            Swap4(s1, s2, s3, t1, t2, t4, s5, s6, s1, t2,
-                                  t4, t1);
-                        if (s8)
-                            Swap1(s7, s8, s1);
-                        return Gain;
-                    case 7:
-                        if ((X4 == 1) ==
-                            (!BETWEEN(s4, t1, s6) && !BETWEEN(s4, t3, s6)))
-                            Swap3(s5, s6, s1, t1, t2, t3, s3, s4, s5);
-                        else
-                            Swap4(s5, s6, s1, t1, t2, t4, s3, s4, s5, t2,
-                                  t4, t1);
-                        if (s8)
-                            Swap1(s7, s8, s1);
-                        return Gain;
+                if (!Forbidden(t4, t1) &&
+                    (t4 != s2 || t1 != s3) &&
+                    (t4 != s3 || t1 != s2) &&
+                    (t4 != s4 || t1 != s5) &&
+                    (t4 != s5 || t1 != s4) &&
+                    (t4 != s6 || t1 != s7) &&
+                    (t4 != s7 || t1 != s6) &&
+                    (t4 != s8 || t1 != s1) &&
+                    (t4 != s1 || t1 != s8) &&
+                    (s8 ||
+                     ((t4 != s6 || t1 != s1) &&
+                      (t4 != s1 || t1 != s6))) &&
+                    (CurrentPenalty > 0 ||
+                     TSPTW_Makespan || !c || G2 - c(t4, t1) > 0)) {
+                    Gain = G2 - C(t4, t1);
+                    if ((CurrentPenalty > 0 || TSPTW_Makespan || Gain > 0)) {
+                        switch (Case6) {
+                        case 0:
+                            if (X4 == 1)
+                                Swap3(s1, s2, s4, t3, t4, t1, s1, s3, s2);
+                            else
+                                Swap2(t1, t2, t3, s1, s2, s3);
+                            break;
+                        case 3:
+                            if ((X4 == 1) == (!BETWEEN(s2, t1, s6)
+                                              && !BETWEEN(s2, t3, s6)))
+                                Swap3(s1, s2, s3, t1, t2, t3, s5, s6, s1);
+                            else
+                                Swap4(s1, s2, s3, t1, t2, t4, s5, s6, s1,
+                                      t2, t4, t1);
+                            if (s8)
+                                Swap1(s7, s8, s1);
+                            break;
+                        case 4:
+                            if ((X4 == 1) == (!BETWEEN(s3, t1, s5)
+                                              && !BETWEEN(s3, t3, s5)))
+                                Swap3(s1, s2, s3, t1, t2, t3, s5, s6, s1);
+                            else
+                                Swap4(s1, s2, s3, t1, t2, t4, s5, s6, s1,
+                                      t2, t4, t1);
+                            if (s8)
+                                Swap1(s7, s8, s1);
+                            break;
+                        case 7:
+                            if ((X4 == 1) == (!BETWEEN(s4, t1, s6)
+                                              && !BETWEEN(s4, t3, s6)))
+                                Swap3(s5, s6, s1, t1, t2, t3, s3, s4, s5);
+                            else
+                                Swap4(s5, s6, s1, t1, t2, t4, s3, s4, s5,
+                                      t2, t4, t1);
+                            if (s8)
+                                Swap1(s7, s8, s1);
+                            break;
+                        }
+                        if (Improvement(&Gain, s1, s2))
+                            return Gain;
                     }
                 }
                 /* If BridgeGain has been called with a nonfeasible 2-opt move,
@@ -179,7 +196,8 @@ BridgeGain(Node * s1, Node * s2, Node * s3, Node * s4,
                                   t6, t1);
                         else
                             Swap3(t1, t2, t3, s1, s2, s3, t5, t6, t1);
-                        return Gain;
+                        if (Improvement(&Gain, s1, s2))
+                            return Gain;
                     }
                     if (++Breadth4 > MaxBreadth)
                         break;
@@ -237,7 +255,8 @@ BridgeGain(Node * s1, Node * s2, Node * s3, Node * s4,
                             else
                                 Swap3(t1, t2, t3, s1, s2, s3, t5, t6, t1);
                             Swap1(t7, t8, t1);
-                            return Gain;
+                            if (Improvement(&Gain, s1, s2))
+                                return Gain;
                         }
                         if (++Breadth6 > MaxBreadth)
                             break;

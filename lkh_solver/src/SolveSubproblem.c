@@ -21,9 +21,9 @@ SolveSubproblem(int CurrentSubproblem, int Subproblems,
     Node *FirstNodeSaved = FirstNode, *N, *Next, *Last = 0;
     GainType OptimumSaved = Optimum, Cost, Improvement, GlobalCost;
     double LastTime, Time, ExcessSaved = Excess;
-    int NewDimension = 0, OldDimension = 0, Number, i, InitialTourEdges = 0,
-        AscentCandidatesSaved = AscentCandidates,
-        InitialPeriodSaved = InitialPeriod, MaxTrialsSaved = MaxTrials;
+    int NewDimension = 0, OldDimension = 0, Number, i, InitialTourEdges =
+        0, AscentCandidatesSaved = AscentCandidates, InitialPeriodSaved =
+        InitialPeriod, MaxTrialsSaved = MaxTrials;
 
     BestCost = PLUS_INFINITY;
     FirstNode = 0;
@@ -70,7 +70,7 @@ SolveSubproblem(int CurrentSubproblem, int Subproblems,
     if (NewDimension <= 3 || NewDimension == OldDimension) {
         if (TraceLevel >= 1) {
             printff("\nSubproblem %d of %d: Dimension = %d ",
-                     Number, Subproblems, NewDimension);
+                    Number, Subproblems, NewDimension);
             if (NewDimension <= 3)
                 printff("(too small)\n");
             else
@@ -172,13 +172,15 @@ SolveSubproblem(int CurrentSubproblem, int Subproblems,
             /* Genetic algorithm */
             for (i = 0; i < PopulationSize; i++)
                 Cost = MergeTourWithIndividual(i);
-            if (!HasFitness(Cost)) {
+            if (!HasFitness(CurrentPenalty, Cost)) {
                 if (PopulationSize < MaxPopulationSize) {
-                    AddToPopulation(Cost);
+                    AddToPopulation(CurrentPenalty, Cost);
                     if (TraceLevel >= 1)
                         PrintPopulation();
-                } else if (Cost < Fitness[PopulationSize - 1]) {
-                    ReplaceIndividualWithTour(PopulationSize - 1, Cost);
+                } else if (SmallerFitness(CurrentPenalty, Cost,
+                                          PopulationSize - 1)) {
+                    ReplaceIndividualWithTour(PopulationSize - 1,
+                                              CurrentPenalty, Cost);
                     if (TraceLevel >= 1)
                         PrintPopulation();
                 }
@@ -222,24 +224,24 @@ SolveSubproblem(int CurrentSubproblem, int Subproblems,
                     N->BestSuc = FirstNode;
             }
             while ((N = N->BestSuc) != FirstNode);
-            Dimension = ProblemType != ATSP ? DimensionSaved : 
+            Dimension = ProblemType != ATSP ? DimensionSaved :
                 2 * DimensionSaved;
             i = 0;
             do {
                 if (ProblemType != ATSP)
                     BetterTour[++i] = N->Id;
-                else if (N->Id <= Dimension / 2) {
+                else if (N->Id <= DimensionSaved) {
                     i++;
-                    if (N->BestSuc->Id != N->Id + Dimension / 2)
+                    if (N->BestSuc->Id != N->Id + DimensionSaved)
                         BetterTour[i] = N->Id;
                     else
-                        BetterTour[Dimension / 2 - i + 1] = N->Id;
+                        BetterTour[DimensionSaved - i + 1] = N->Id;
                 }
             }
             while ((N = N->BestSuc) != FirstNode);
             BetterTour[0] =
                 BetterTour[ProblemType !=
-                           ATSP ? Dimension : Dimension / 2];
+                           ATSP ? Dimension : DimensionSaved];
             WriteTour(OutputTourFileName, BetterTour, GlobalCost);
             if (Improvement > 0) {
                 do

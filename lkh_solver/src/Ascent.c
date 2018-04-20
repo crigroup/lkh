@@ -22,7 +22,7 @@
 GainType Ascent()
 {
     Node *t;
-    GainType BestW, W, W0, Alpha, MaxAlpha = INT_MAX;
+    GainType BestW, W, W0, MaxAlpha, A;
     int T, Period, P, InitialPhase, BestNorm;
 
   Start:
@@ -33,8 +33,12 @@ GainType Ascent()
     while ((t = t->Suc) != FirstNode);
     if (CandidateSetType == DELAUNAY)
         CreateDelaunayCandidateSet();
-    else
+    else if (MaxCandidates == 0) {
         AddTourCandidates();
+        if (ExtraCandidates > 0)
+            AddExtraCandidates(ExtraCandidates, ExtraCandidateSetType,
+                               ExtraCandidateSetSymmetric);
+    }
 
     /* Compute the cost of a minimum 1-tree */
     W = Minimum1TreeCost(CandidateSetType == DELAUNAY
@@ -44,15 +48,19 @@ GainType Ascent()
        if either
        (1) subgradient optimization is not wanted, or
        (2) the norm of the tree (its deviation from a tour) is zero
-           (in that case the true optimum has been found).
+       (in that case the true optimum has been found).
      */
     if (!Subgradient || !Norm)
         return W;
 
-    if (Optimum != MINUS_INFINITY && (Alpha = Optimum * Precision - W) >= 0)
-        MaxAlpha = Alpha;
     if (MaxCandidates > 0) {
         /* Generate symmetric candididate sets for all nodes */
+        MaxAlpha = INT_MAX;
+        if (ProblemType != CCVRP && ProblemType != TRP &&
+            MTSPObjective != MINMAX &&
+            MTSPObjective != MINMAX_SIZE &&
+            Optimum != INT_MAX && (A = Optimum * Precision - W) > 0)
+            MaxAlpha = A;
         if (CandidateSetType != DELAUNAY)
             GenerateCandidates(AscentCandidates, MaxAlpha, 1);
         else {
@@ -86,18 +94,18 @@ GainType Ascent()
         /* Period and step size are halved at each iteration */
         if (TraceLevel >= 2)
             printff
-                ("  T = %d, Period = %d, BestW = %0.1f, Norm = %d\n",
-                 T, Period, (double) BestW / Precision, Norm);
+                ("  T = %d, Period = %d, BestW = %0.1f, BestNorm = %d\n",
+                 T, Period, (double) BestW / Precision, BestNorm);
         for (P = 1; T && P <= Period && Norm != 0; P++) {
             /* Adjust the Pi-values */
             t = FirstNode;
             do {
                 if (t->V != 0) {
                     t->Pi += T * (7 * t->V + 3 * t->LastV) / 10;
-                    if (t->Pi > INT_MAX / 4)
-                        t->Pi = INT_MAX / 4;
-                    else if (t->Pi < -INT_MAX / 4)
-                        t->Pi = -INT_MAX / 4;
+                     if (t->Pi > INT_MAX / 10)
+                        t->Pi = INT_MAX / 10;
+                    else if (t->Pi < INT_MIN / 10)
+                        t->Pi = INT_MIN / 10;
                 }
                 t->LastV = t->V;
             }
@@ -133,13 +141,13 @@ GainType Ascent()
                 while ((t = t->Suc) != FirstNode);
                 if (TraceLevel >= 2)
                     printff
-                        ("* T = %d, Period = %d, P = %d, BestW = %0.1f, Norm = %d\n",
-                         T, Period, P, (double) BestW / Precision, Norm);
+                        ("* T = %d, Period = %d, P = %d, "
+                         "BestW = %0.1f, BestNorm = %d\n",
+                         T, Period, P, (double) BestW / Precision,
+                         BestNorm);
                 /* If in the initial phase, the step size is doubled */
                 if (InitialPhase && T * sqrt((double) Norm) > 0)
                     T *= 2;
-                /* If the improvement was found at the last iteration of the 
-                   current period, then double the period */
                 if (CandidateSetType != DELAUNAY && P == Period
                     && (Period *= 2) > InitialPeriod)
                     Period = InitialPeriod;
@@ -165,8 +173,8 @@ GainType Ascent()
     } while ((t = t->Suc) != FirstNode);
 
     /* Compute a minimum 1-tree */
-    W = BestW = Minimum1TreeCost(CandidateSetType == DELAUNAY
-                                 || MaxCandidates == 0);
+    BestW = Minimum1TreeCost(CandidateSetType == DELAUNAY
+                             || MaxCandidates == 0);
 
     if (MaxCandidates > 0) {
         FreeCandidateSets();

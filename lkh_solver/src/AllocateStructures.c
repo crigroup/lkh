@@ -1,5 +1,6 @@
 #include "Segment.h"
 #include "LKH.h"
+#include "BIT.h"
 #include "Heap.h"
 #include "Sequence.h"
 
@@ -29,7 +30,7 @@ void AllocateStructures()
     Free(SwapStack);
     Free(tSaved);
 
-    MakeHeap(Dimension);
+    HeapMake(Dimension);
     assert(BestTour = (int *) calloc(1 + Dimension, sizeof(int)));
     assert(BetterTour = (int *) calloc(1 + Dimension, sizeof(int)));
     assert(HTable = (HashTable *) malloc(sizeof(HashTable)));
@@ -61,6 +62,7 @@ void AllocateStructures()
     assert(cycle = (int *) malloc(6 * K * sizeof(int)));
     assert(SwapStack =
            (SwapRecord *) malloc((MaxSwaps + 6 * K) * sizeof(SwapRecord)));
+    BIT_Make(Dim);
 }
 
 /*      

@@ -15,7 +15,7 @@
  * effect if the node is already in the queue. 
  *
  * The function is called from the StoreTour function.  
-*/
+ */
 
 void Activate(Node * N)
 {

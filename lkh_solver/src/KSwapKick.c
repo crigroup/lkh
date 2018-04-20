@@ -7,7 +7,7 @@
  * The algorithm is inspired by the thesis 
  *
  *    D. Richter,
- *    Toleranzen in Helsgauns Lin-Kernighan.Heuristik fur das TSP,
+ *    Toleranzen in Helsgauns Lin-Kernighan-Heuristik fur das TSP,
  *    Diplomarbeit, Martin-Luther-Universitat Halle-Wittenberg, 2006.
  */
 
@@ -68,7 +68,7 @@ static Node *RandomNode()
             N = N->Suc;
     }
     Count = 0;
-    while ((FixedOrCommon(N, N->Suc) || N->V) && Count < Dimension) {
+    while ((N->V || FixedOrCommon(N, N->Suc)) && Count < Dimension) {
         N = N->Suc;
         Count++;
     }

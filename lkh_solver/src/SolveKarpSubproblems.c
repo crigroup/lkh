@@ -45,7 +45,7 @@ void SolveKarpSubproblems()
         printff("*** Karp partitioning *** [Cost = " GainFormat "]\n",
                 GlobalBestCost);
     }
-    if (WeightType == GEO || WeightType == GEOM || 
+    if (WeightType == GEO || WeightType == GEOM ||
         WeightType == GEO_MEEUS || WeightType == GEOM_MEEUS) {
         N = FirstNode;
         do {
@@ -113,7 +113,7 @@ static void KarpPartition(int start, int end)
 
 /*
  * The CalculateSubproblems function is used to calculate the number of 
- * subproblems (Subproblems) created by the Karpartition function.
+ * subproblems (Subproblems) created by the KarpPartition function.
  */
 
 static void CalculateSubproblems(int start, int end)
