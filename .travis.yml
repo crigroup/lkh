@@ -42,7 +42,8 @@ install:
 before_script:
   - cd ~/catkin_ws
   - rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
-  - mkdir -p /tmp/lkh
+  # Create tmp directories
+  - mkdir -p /tmp/lkh/TMP
 
 # Compile
 script:
