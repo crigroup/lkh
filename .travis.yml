@@ -44,4 +44,12 @@ script:
   - cd ~/catkin_ws
   - catkin_make
   - source devel/setup.bash
-  - catkin_make test
+  # Run the tests
+  - catkin_make run_tests
+  - catkin_test_results
+  # Build the docs
+  - cd ~/catkin_ws/src/lkh/lkh_solver
+  - rosdoc_lite .
+  # Run coverage
+  - cd ~/catkin_ws/src/lkh/lkh_solver
+  - nosetests tests/ --with-coverage --cover-package=lkh_solver
