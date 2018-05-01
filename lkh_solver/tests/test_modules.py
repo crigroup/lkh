@@ -22,10 +22,11 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     # Solve them
     for problem_file in files:
       params = lkh.solver.SolverParameters()
+      params.problem_file = problem_file
       params.trace_level = 0
       params.max_trials = 1
       params.special = problem_file.endswith('.m-pdtsp')
-      tour, info = lkh.solver.lkh_solver(problem_file, params)
+      tour, info = lkh.solver.lkh_solver(params)
       self.assertIsNotNone(tour)
     # Solve burma14 with 2 salesmen MINSUM
     params.salesmen = 2
@@ -33,7 +34,8 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     params.mtsp_max_size = 8
     params.mtsp_objective = 'MINSUM'
     problem_file = [name for name in files if 'burma' in name].pop()
-    tour, info = lkh.solver.lkh_solver(problem_file, params)
+    params.problem_file = problem_file
+    tour, info = lkh.solver.lkh_solver(params)
     self.assertIsNotNone(tour)
     # Solve br17 with 2 salesmen MINMAX_SIZE and SPECIAL options
     params.salesmen = 2
@@ -42,7 +44,8 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     params.mtsp_max_size = 16
     params.mtsp_objective = 'MINMAX_SIZE'
     problem_file = [name for name in files if 'br17' in name].pop()
-    tour, info = lkh.solver.lkh_solver(problem_file, params)
+    params.problem_file = problem_file
+    tour, info = lkh.solver.lkh_solver(params)
     self.assertIsNotNone(tour)
 
   def test_SolverParameters(self):

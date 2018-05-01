@@ -22,4 +22,5 @@ class Test_glkh_solver(unittest.TestCase):
     params = lkh.solver.SolverParameters()
     params.trace_level = 0
     for problem_file in files:
-      tour, info = lkh.solver.lkh_solver(problem_file, params, pkg, rosnode)
+      params.problem_file = problem_file
+      tour, info = lkh.solver.lkh_solver(params, pkg, rosnode)
