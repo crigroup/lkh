@@ -138,5 +138,5 @@ def lkh_solver(params, pkg='lkh_solver', rosnode='lkh_solver',
     os.remove(basename+'.pi')
   except OSError:
     pass
-  shutil.rmtree(tmp_path, ignore_errors=True)
+  # shutil.rmtree(tmp_path, ignore_errors=True)
   return tour, info
