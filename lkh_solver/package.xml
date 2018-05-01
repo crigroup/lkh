@@ -17,6 +17,7 @@
 
   <depend>roscpp</depend>
 
+  <exec_depend>python-networkx</exec_depend>
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>resource_retriever</exec_depend>
 
