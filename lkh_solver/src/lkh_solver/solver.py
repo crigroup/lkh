@@ -111,7 +111,7 @@ def lkh_solver(params, pkg='lkh_solver', rosnode='lkh_solver',
   create_dir(working_path)
   create_dir(tmp_path)
   # Generate the parameters file
-  basename = params.write()
+  basename = params.write(working_path)
   # Call the LKH solver
   outpipe = PIPE
   try:
