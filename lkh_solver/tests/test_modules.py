@@ -14,14 +14,36 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     files = []
     for name in os.listdir(path):
       fullpath = os.path.join(path, name)
-      valid_ext = fullpath.endswith('.tsp') or fullpath.endswith('.atsp')
+      valid_ext =  fullpath.endswith('.tsp')
+      valid_ext |= fullpath.endswith('.atsp')
+      valid_ext |= fullpath.endswith('.m-pdtsp')
       if os.path.isfile(fullpath) and valid_ext:
         files.append(fullpath)
     # Solve them
-    params = lkh.solver.SolverParameters()
-    params.trace_level = 1
     for problem_file in files:
+      params = lkh.solver.SolverParameters()
+      params.trace_level = 0
+      params.max_trials = 1
+      params.special = problem_file.endswith('.m-pdtsp')
       tour, info = lkh.solver.lkh_solver(problem_file, params)
+      self.assertIsNotNone(tour)
+    # Solve burma14 with 2 salesmen MINSUM
+    params.salesmen = 2
+    params.mtsp_min_size = 7
+    params.mtsp_max_size = 8
+    params.mtsp_objective = 'MINSUM'
+    problem_file = [name for name in files if 'burma' in name].pop()
+    tour, info = lkh.solver.lkh_solver(problem_file, params)
+    self.assertIsNotNone(tour)
+    # Solve br17 with 2 salesmen MINMAX_SIZE and SPECIAL options
+    params.salesmen = 2
+    params.special = True
+    params.mtsp_min_size = 1
+    params.mtsp_max_size = 16
+    params.mtsp_objective = 'MINMAX_SIZE'
+    problem_file = [name for name in files if 'br17' in name].pop()
+    tour, info = lkh.solver.lkh_solver(problem_file, params)
+    self.assertIsNotNone(tour)
 
   def test_SolverParameters(self):
     params = lkh.solver.SolverParameters()
@@ -39,4 +61,3 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     params.runs = 1
     params.seed = 1
     params.trace_level = 1
-    self.assertRaises(TypeError, setattr, args=(params, 123, 'non_existent'))
