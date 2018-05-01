@@ -9,6 +9,7 @@ import lkh_solver as lkh
 
 class Test_lkh_solver_Modules(unittest.TestCase):
   def test_lkh_solver(self):
+    working_path = os.path.expanduser('~/.lkh')
     folder = 'package://lkh_solver/tsplib'
     path = resource_retriever.get_filename(folder, use_protocol=False)
     files = []
@@ -26,7 +27,7 @@ class Test_lkh_solver_Modules(unittest.TestCase):
       params.trace_level = 0
       params.max_trials = 1
       params.special = problem_file.endswith('.m-pdtsp')
-      tour, info = lkh.solver.lkh_solver(params)
+      tour, info = lkh.solver.lkh_solver(params, working_path=working_path)
       self.assertIsNotNone(tour)
     # Solve burma14 with 2 salesmen MINSUM
     params.salesmen = 2
@@ -35,7 +36,7 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     params.mtsp_objective = 'MINSUM'
     problem_file = [name for name in files if 'burma' in name].pop()
     params.problem_file = problem_file
-    tour, info = lkh.solver.lkh_solver(params)
+    tour, info = lkh.solver.lkh_solver(params, working_path=working_path)
     self.assertIsNotNone(tour)
     # Solve br17 with 2 salesmen MINMAX_SIZE and SPECIAL options
     params.salesmen = 2
@@ -45,7 +46,7 @@ class Test_lkh_solver_Modules(unittest.TestCase):
     params.mtsp_objective = 'MINMAX_SIZE'
     problem_file = [name for name in files if 'br17' in name].pop()
     params.problem_file = problem_file
-    tour, info = lkh.solver.lkh_solver(params)
+    tour, info = lkh.solver.lkh_solver(params, working_path=working_path)
     self.assertIsNotNone(tour)
 
   def test_SolverParameters(self):

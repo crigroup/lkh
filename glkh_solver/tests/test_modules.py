@@ -9,6 +9,7 @@ import lkh_solver as lkh
 
 class Test_glkh_solver(unittest.TestCase):
   def test_glkh_solver(self):
+    working_path = os.path.expanduser('~/.lkh')
     folder = 'package://glkh_solver/gtsplib'
     path = resource_retriever.get_filename(folder, use_protocol=False)
     files = []
@@ -23,4 +24,5 @@ class Test_glkh_solver(unittest.TestCase):
     params.trace_level = 0
     for problem_file in files:
       params.problem_file = problem_file
-      tour, info = lkh.solver.lkh_solver(params, pkg, rosnode)
+      tour, info = lkh.solver.lkh_solver(params, pkg, rosnode,
+                                                      working_path=working_path)
