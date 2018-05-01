@@ -44,6 +44,17 @@ extensions = [
     'sphinx.ext.napoleon'
 ]
 
+import sphinx
+from distutils.version import StrictVersion
+
+use_napoleon = StrictVersion(sphinx.__version__) >= StrictVersion('1.3')
+
+if use_napoleon:
+  extensions.append('sphinx.ext.napoleon')
+else:
+  extensions.append('numpydoc')
+  numpydoc_show_class_members = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
 

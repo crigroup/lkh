@@ -17,8 +17,10 @@
 
   <depend>roscpp</depend>
 
+  <exec_depend>python-numpy</exec_depend>
   <exec_depend>resource_retriever</exec_depend>
-  <exec_depend>rosbash</exec_depend>
+
+  <doc_depend>rosdoc_lite</doc_depend>
 
   <export>
     <rosdoc config="rosdoc.yaml"/>
