@@ -50,7 +50,7 @@ class SolverParameters(object):
     basename: str
       The basename is the `problem_file` without the file extension
     """
-    create_dir(working_path)
+    parser.create_dir(working_path)
     if not hasattr(self, 'problem_file'):
       raise AttributeError('PROBLEM_FILE must be specified')
     problem_name = os.path.splitext(os.path.basename(self.problem_file))[0]
@@ -69,14 +69,6 @@ class SolverParameters(object):
     with open(basename+'.par', 'w') as f:
       f.write(content)
     return basename
-
-
-def create_dir(dpath):
-  if not os.path.isdir(dpath):
-    try:
-      os.makedirs(dpath)
-    except OSError:
-      raise OSError('Failed to create: {}'.format(dpath))
 
 def lkh_solver(params, pkg='lkh_solver', rosnode='lkh_solver',
                                                       working_path='/tmp/lkh'):
@@ -108,8 +100,8 @@ def lkh_solver(params, pkg='lkh_solver', rosnode='lkh_solver',
   starttime = time.time()
   # Create a TMP folder required for the GTSP solver
   tmp_path = os.path.join(working_path, 'TMP')
-  create_dir(working_path)
-  create_dir(tmp_path)
+  parser.create_dir(working_path)
+  parser.create_dir(tmp_path)
   # Generate the parameters file
   basename = params.write(working_path)
   # Call the LKH solver

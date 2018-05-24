@@ -3,6 +3,12 @@ import os
 import numpy as np
 import networkx as nx
 
+def create_dir(dpath):
+  if not os.path.isdir(dpath):
+    try:
+      os.makedirs(dpath)
+    except OSError:
+      raise OSError('Failed to create: {}'.format(dpath))
 
 def get_keyword_index(lines, keyword):
   """
@@ -102,6 +108,11 @@ def write_tsplib(filename, graph, params, sigfigs=3, nodelist=None,
   basename: str
     The basename is equal to the `filename` without the file extension
   """
+  # Create working path if needed
+  path, _ = os.path.split(filename)
+  if path:
+    create_dir(path)
+  # Write the problem file
   problem_name, extension = os.path.splitext(os.path.basename(filename))
   if extension.lower() == '.tsp':
     problem_type = 'TSP'
