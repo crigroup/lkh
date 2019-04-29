@@ -3,7 +3,8 @@ ROS packages by [CRI Group](http://www.ntu.edu.sg/home/cuong/),
 [Nanyang Technological University, Singapore](http://www.ntu.edu.sg).
 
 The LKH and GLKH solvers have been copied from:
-http://webhotel4.ruc.dk/~keld/research/GLKH/
+- http://webhotel4.ruc.dk/~keld/research/GLKH/
+- http://webhotel4.ruc.dk/~keld/research/LKH-3/
 
 ### Maintainer
 * [Francisco Suárez Ruiz](http://fsuarez6.github.io)

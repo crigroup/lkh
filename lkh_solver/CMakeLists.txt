@@ -22,7 +22,9 @@ add_executable(${PROJECT_NAME} ${LKH_SRC})
 target_link_libraries(${PROJECT_NAME} -lm)
 
 # Tests
-catkin_add_nosetests(tests/test_modules.py)
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_nosetests(tests/test_modules.py)
+endif()
 
 # Install nodes
 install(

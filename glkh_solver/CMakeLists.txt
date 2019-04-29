@@ -44,7 +44,9 @@ add_executable(glkh_check_solver src/GLKH_CHECKmain.c ${COMMON_SRC_FILES})
 target_link_libraries(glkh_check_solver -lm)
 
 # Tests
-catkin_add_nosetests(tests/test_modules.py)
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_nosetests(tests/test_modules.py)
+endif()
 
 # Install nodes
 install(
